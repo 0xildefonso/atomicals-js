@@ -85,7 +85,7 @@ export class ElectrumApi implements ElectrumApiInterface {
                     data.utxos.push({
                         txid: utxo.tx_hash,
                         txId: utxo.tx_hash,
-                        // height: utxo.height,
+                        height: utxo.height,
                         outputIndex: utxo.tx_pos,
                         index: utxo.tx_pos,
                         vout: utxo.tx_pos,

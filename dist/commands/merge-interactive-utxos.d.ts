@@ -2,6 +2,7 @@ import { ElectrumApiInterface } from "../api/electrum-api.interface";
 import { CommandInterface } from "./command.interface";
 import { KeyPairInfo } from "../utils/address-keypair-path";
 import { IValidatedWalletInfo } from "../utils/validate-wallet-storage";
+import { BaseRequestOptions } from "../interfaces/api.interface";
 export interface IUtxoBalanceSummary {
     utxos: any[];
 }
@@ -31,11 +32,12 @@ export interface TransferConfigInterface {
 }
 export declare class MergeInteractiveUtxosCommand implements CommandInterface {
     private electrumApi;
+    private options;
     private currentOwnerAtomicalWIF;
     private fundingWIF;
     private validatedWalletInfo;
     private satsbyte;
-    constructor(electrumApi: ElectrumApiInterface, currentOwnerAtomicalWIF: string, fundingWIF: string, validatedWalletInfo: IValidatedWalletInfo, satsbyte: number);
+    constructor(electrumApi: ElectrumApiInterface, options: BaseRequestOptions, currentOwnerAtomicalWIF: string, fundingWIF: string, validatedWalletInfo: IValidatedWalletInfo, satsbyte: number);
     run(): Promise<any>;
     promptTransferOptions(address: any): Promise<TransferConfigInterface>;
     promptIfDetectedSomeAtomicalsAtSameUtxos(selectedUtxos: ISelectedUtxo[]): Promise<void>;

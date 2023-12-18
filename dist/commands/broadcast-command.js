@@ -20,7 +20,7 @@ class BroadcastCommand {
             const result = yield this.electrumApi.broadcast(this.rawtx);
             return {
                 success: true,
-                result,
+                data: result,
             };
         });
     }

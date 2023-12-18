@@ -12,8 +12,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ElectrumApi = void 0;
 /* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable prettier/prettier */
-const address_helpers_1 = require("../utils/address-helpers");
 const axios_1 = require("axios");
+const address_helpers_1 = require("../utils/address-helpers");
 class ElectrumApi {
     constructor(baseUrl, usePost = true) {
         this.baseUrl = baseUrl;
@@ -25,106 +25,82 @@ class ElectrumApi {
         return __awaiter(this, void 0, void 0, function* () {
         });
     }
-    static createClient(url) {
-        return new ElectrumApi(url);
+    static createClient(url, usePost = true) {
+        return new ElectrumApi(url, usePost);
     }
     open() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                if (this.isOpenFlag) {
-                    resolve(true);
-                    return;
-                }
+        return new Promise((resolve) => {
+            if (this.isOpenFlag) {
                 resolve(true);
-            });
-            return p;
+                return;
+            }
+            resolve(true);
         });
     }
     isOpen() {
         return this.isOpenFlag;
     }
     close() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                resolve(true);
-            });
-            return p;
-        });
+        return Promise.resolve(true);
     }
     call(method, params) {
         return __awaiter(this, void 0, void 0, function* () {
-            if (this.usePost) {
-                const response = yield axios_1.default.post(this.baseUrl + '/' + method, { params });
+            try {
+                let response;
+                if (this.usePost) {
+                    response = yield axios_1.default.post(`${this.baseUrl}/${method}`, { params });
+                }
+                else {
+                    response = yield axios_1.default.get(`${this.baseUrl}/${method}?params=${JSON.stringify(params)}`);
+                }
                 return response.data.response;
             }
-            else {
-                const response = yield axios_1.default.get(this.baseUrl + '/' + method + '?params=' + JSON.stringify(params));
-                return response.data.response;
+            catch (error) {
+                console.log(error);
+                throw error;
             }
         });
     }
-    sendTransaction(signedRawtx) {
-        return __awaiter(this, void 0, void 0, function* () {
-            return this.broadcast(signedRawtx);
-        });
+    sendTransaction(signedRawTx) {
+        return this.broadcast(signedRawTx);
     }
-    getTx(txid, verbose = false) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('blockchain.transaction.get', [txid, verbose ? 1 : 0]).then(function (result) {
-                    resolve({
-                        success: true,
-                        tx: result
-                    });
-                }).catch((error) => {
-                    reject(error);
-                });
-            });
-            return p;
+    getTx(txId, verbose = false) {
+        return new Promise((resolve, reject) => {
+            this.call('blockchain.transaction.get', [txId, verbose ? 1 : 0]).then((result) => {
+                resolve({ success: true, tx: result });
+            }).catch((error) => reject(error));
         });
     }
     getUnspentAddress(address) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const { scripthash } = (0, address_helpers_1.detectAddressTypeToScripthash)(address);
-            return this.getUnspentScripthash(scripthash);
-        });
+        const { scripthash } = (0, address_helpers_1.detectAddressTypeToScripthash)(address);
+        return this.getUnspentScripthash(scripthash);
     }
-    getUnspentScripthash(scripthash) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('blockchain.scripthash.listunspent', [scripthash]).then(function (result) {
-                    const data = {
-                        unconfirmed: 0,
-                        confirmed: 0,
-                        //balance: 0,
-                        utxos: []
-                    };
-                    for (const utxo of result) {
-                        if (!utxo.height || utxo.height <= 0) {
-                            data.unconfirmed += utxo.value;
-                        }
-                        else {
-                            data.confirmed += utxo.value;
-                        }
-                        //data.balance += utxo.value;
-                        data.utxos.push({
-                            txid: utxo.tx_hash,
-                            txId: utxo.tx_hash,
-                            // height: utxo.height,
-                            outputIndex: utxo.tx_pos,
-                            index: utxo.tx_pos,
-                            vout: utxo.tx_pos,
-                            value: utxo.value,
-                            atomicals: utxo.atomicals,
-                            //script: addressToP2PKH(address)
-                        });
+    getUnspentScripthash(scriptHash) {
+        return new Promise((resolve, reject) => {
+            this.call('blockchain.scripthash.listunspent', [scriptHash]).then(function (result) {
+                const data = { unconfirmed: 0, confirmed: 0, utxos: [] };
+                for (const utxo of result) {
+                    if (!utxo.height || utxo.height <= 0) {
+                        data.unconfirmed += utxo.value;
                     }
-                    resolve(data);
-                }).catch((error) => {
-                    reject(error);
-                });
-            });
-            return p;
+                    else {
+                        data.confirmed += utxo.value;
+                    }
+                    // data.balance += utxo.value;
+                    data.utxos.push({
+                        txid: utxo.tx_hash,
+                        txId: utxo.tx_hash,
+                        height: utxo.height,
+                        outputIndex: utxo.tx_pos,
+                        index: utxo.tx_pos,
+                        vout: utxo.tx_pos,
+                        value: utxo.value,
+                        atomicals: utxo.atomicals,
+                        // script: addressToP2PKH(address)
+                    });
+                }
+                resolve(data);
+            }).catch((error) => reject(error));
         });
     }
     waitUntilUTXO(address, satoshis, intervalSeconds = 10, exactSatoshiAmount = false) {
@@ -133,18 +109,18 @@ class ElectrumApi {
                 if (utxo && utxo.atomicals && utxo.atomicals.length) {
                     return true;
                 }
-                if (utxo && utxo.height <= 0) {
-                    return true;
-                }
-                return false;
+                return utxo && utxo.height <= 0;
             }
             return new Promise((resolve, reject) => {
                 let intervalId;
                 const checkForUtxo = () => __awaiter(this, void 0, void 0, function* () {
                     console.log('...');
                     try {
-                        const response = yield this.getUnspentAddress(address);
-                        const utxos = response.utxos;
+                        const response = yield this.getUnspentAddress(address).catch((e) => {
+                            console.error(e);
+                            return { unconfirmed: 0, confirmed: 0, utxos: [] };
+                        });
+                        const utxos = response.utxos.sort((a, b) => a.value - b.value);
                         for (const utxo of utxos) {
                             // Do not use utxos that have attached atomicals
                             if (hasAttachedAtomicals(utxo)) {
@@ -168,7 +144,7 @@ class ElectrumApi {
                         }
                     }
                     catch (error) {
-                        console.log('error', error);
+                        console.error(error);
                         reject(error);
                         clearInterval(intervalId);
                     }
@@ -178,413 +154,127 @@ class ElectrumApi {
         });
     }
     serverVersion() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('server.version', []).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        return this.call('server.version', []);
     }
     broadcast(rawtx, force = false) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                if (force) {
-                    this.call('blockchain.transaction.broadcast_force', [rawtx]).then(function (result) {
-                        resolve(result);
-                    }).catch((error) => {
-                        console.log(error);
-                        reject(error);
-                    });
-                }
-                else {
-                    this.call('blockchain.transaction.broadcast', [rawtx]).then(function (result) {
-                        resolve(result);
-                    }).catch((error) => {
-                        console.log(error);
-                        reject(error);
-                    });
-                }
-            });
-            return p;
-        });
+        return this.call(force
+            ? 'blockchain.transaction.broadcast_force'
+            : 'blockchain.transaction.broadcast', [rawtx]);
     }
     dump() {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('blockchain.atomicals.dump', []).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        return this.call('blockchain.atomicals.dump', []);
     }
     atomicalsGetGlobal(hashes) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('blockchain.atomicals.get_global', [hashes]).then(function (result) {
-                    console.log('response', result);
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        return this.call('blockchain.atomicals.get_global', [hashes]);
     }
     atomicalsGet(atomicalAliasOrId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('blockchain.atomicals.get', [atomicalAliasOrId]).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        return this.call('blockchain.atomicals.get', [atomicalAliasOrId]);
     }
     atomicalsGetFtInfo(atomicalAliasOrId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('blockchain.atomicals.get_ft_info', [atomicalAliasOrId]).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        return this.call('blockchain.atomicals.get_ft_info', [atomicalAliasOrId]);
     }
     atomicalsGetLocation(atomicalAliasOrId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('blockchain.atomicals.get_location', [atomicalAliasOrId]).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        return this.call('blockchain.atomicals.get_location', [atomicalAliasOrId]);
     }
     atomicalsGetStateHistory(atomicalAliasOrId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('blockchain.atomicals.get_state_history', [atomicalAliasOrId]).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        return this.call('blockchain.atomicals.get_state_history', [atomicalAliasOrId]);
     }
     atomicalsGetState(atomicalAliasOrId, verbose) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('blockchain.atomicals.get_state', [atomicalAliasOrId, verbose ? 1 : 0]).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        return this.call('blockchain.atomicals.get_state', [atomicalAliasOrId, verbose ? 1 : 0]);
     }
     atomicalsGetEventHistory(atomicalAliasOrId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('blockchain.atomicals.get_events', [atomicalAliasOrId]).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        return this.call('blockchain.atomicals.get_events', [atomicalAliasOrId]);
     }
     atomicalsGetTxHistory(atomicalAliasOrId) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('blockchain.atomicals.get_tx_history', [atomicalAliasOrId]).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        return this.call('blockchain.atomicals.get_tx_history', [atomicalAliasOrId]);
     }
     history(scripthash) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('blockchain.scripthash.get_history', [scripthash]).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        return this.call('blockchain.scripthash.get_history', [scripthash]);
     }
     atomicalsList(limit, offset, asc = false) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('blockchain.atomicals.list', [limit, offset, asc ? 1 : 0]).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        return this.call('blockchain.atomicals.list', [limit, offset, asc ? 1 : 0]);
     }
     atomicalsByScripthash(scripthash, verbose = true) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                const params = [scripthash];
-                if (verbose) {
-                    params.push(true);
-                }
-                this.call('blockchain.atomicals.listscripthash', params).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        const params = [scripthash];
+        if (verbose) {
+            params.push(true);
+        }
+        return this.call('blockchain.atomicals.listscripthash', params);
     }
     atomicalsByAddress(address) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const { scripthash } = (0, address_helpers_1.detectAddressTypeToScripthash)(address);
-            return this.atomicalsByScripthash(scripthash);
-        });
+        const { scripthash } = (0, address_helpers_1.detectAddressTypeToScripthash)(address);
+        return this.atomicalsByScripthash(scripthash);
     }
     atomicalsAtLocation(location) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('blockchain.atomicals.at_location', [location]).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        return this.call('blockchain.atomicals.at_location', [location]);
     }
     txs(txs, verbose) {
-        return __awaiter(this, void 0, void 0, function* () {
-            let p;
-            if (true) {
-                p = [];
-                for (const tx of txs) {
-                    p.push(new Promise((resolve, reject) => {
-                        this.call('blockchain.transaction.get', [tx, verbose ? 1 : 0]).then(function (result) {
-                            resolve(result);
-                        }).catch((error) => {
-                            console.log('error ', error);
-                            reject(error);
-                        });
-                    }));
-                }
-                return Promise.all(p);
-            }
-        });
+        return Promise.all(txs.map((tx) => this.call('blockchain.transaction.get', [tx, verbose ? 1 : 0])));
     }
     atomicalsGetRealmInfo(realmOrSubRealm, verbose) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('blockchain.atomicals.get_realm_info', [realmOrSubRealm, verbose ? 1 : 0]).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        return this.call('blockchain.atomicals.get_realm_info', [realmOrSubRealm, verbose ? 1 : 0]);
     }
     atomicalsGetByRealm(realm) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('blockchain.atomicals.get_by_realm', [realm]).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        return this.call('blockchain.atomicals.get_by_realm', [realm]);
     }
     atomicalsGetByTicker(ticker) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('blockchain.atomicals.get_by_ticker', [ticker]).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        return this.call('blockchain.atomicals.get_by_ticker', [ticker]);
     }
     atomicalsGetByContainer(container) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('blockchain.atomicals.get_by_container', [container]).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        return this.call('blockchain.atomicals.get_by_container', [container]);
     }
     atomicalsGetContainerItems(container, limit, offset) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('blockchain.atomicals.get_container_items', [container, limit, offset]).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        return this.call('blockchain.atomicals.get_container_items', [container, limit, offset]);
     }
     atomicalsGetByContainerItem(container, itemName) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('blockchain.atomicals.get_by_container_item', [container, itemName]).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        return this.call('blockchain.atomicals.get_by_container_item', [container, itemName]);
     }
     atomicalsGetByContainerItemValidated(container, item, bitworkc, bitworkr, main, mainHash, proof, checkWithoutSealed) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                this.call('blockchain.atomicals.get_by_container_item_validate', [container, item, bitworkc, bitworkr, main, mainHash, proof, checkWithoutSealed]).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        return this.call('blockchain.atomicals.get_by_container_item_validate', [container, item, bitworkc, bitworkr, main, mainHash, proof, checkWithoutSealed]);
     }
     atomicalsFindTickers(prefix, asc) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                const args = [];
-                args.push(prefix ? prefix : null);
-                if (!asc) {
-                    args.push(1);
-                }
-                else {
-                    args.push(0);
-                }
-                this.call('blockchain.atomicals.find_tickers', args).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        const args = [];
+        args.push(prefix ? prefix : null);
+        if (!asc) {
+            args.push(1);
+        }
+        else {
+            args.push(0);
+        }
+        return this.call('blockchain.atomicals.find_tickers', args);
     }
     atomicalsFindContainers(prefix, asc) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                const args = [];
-                args.push(prefix ? prefix : null);
-                if (!asc) {
-                    args.push(1);
-                }
-                else {
-                    args.push(0);
-                }
-                this.call('blockchain.atomicals.find_containers', args).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        const args = [];
+        args.push(prefix ? prefix : null);
+        if (!asc) {
+            args.push(1);
+        }
+        else {
+            args.push(0);
+        }
+        return this.call('blockchain.atomicals.find_containers', args);
     }
     atomicalsFindRealms(prefix, asc) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                const args = [];
-                args.push(prefix ? prefix : null);
-                if (!asc) {
-                    args.push(1);
-                }
-                else {
-                    args.push(0);
-                }
-                this.call('blockchain.atomicals.find_realms', args).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        const args = [];
+        args.push(prefix ? prefix : null);
+        if (!asc) {
+            args.push(1);
+        }
+        else {
+            args.push(0);
+        }
+        return this.call('blockchain.atomicals.find_realms', args);
     }
     atomicalsFindSubRealms(parentRealmId, prefix, asc) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const p = new Promise((resolve, reject) => {
-                const args = [];
-                args.push(prefix ? prefix : null);
-                if (!asc) {
-                    args.push(1);
-                }
-                else {
-                    args.push(0);
-                }
-                this.call('blockchain.atomicals.find_subrealms', [parentRealmId, args]).then(function (result) {
-                    resolve(result);
-                }).catch((error) => {
-                    console.log('error ', error);
-                    reject(error);
-                });
-            });
-            return p;
-        });
+        const args = [];
+        args.push(prefix ? prefix : null);
+        if (!asc) {
+            args.push(1);
+        }
+        else {
+            args.push(0);
+        }
+        return this.call('blockchain.atomicals.find_subrealms', [parentRealmId, args]);
     }
 }
 exports.ElectrumApi = ElectrumApi;

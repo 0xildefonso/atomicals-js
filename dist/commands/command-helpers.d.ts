@@ -5,6 +5,7 @@ import { KeyPairInfo } from "../utils/address-keypair-path";
 import { ElectrumApiInterface } from "../api/electrum-api.interface";
 import { AtomicalIdentifierType } from "../utils/atomical-format-helpers";
 import { IInputUtxoPartial } from "../types/UTXO.interface";
+export declare const RBF_INPUT_SEQUENCE = 4294967293;
 export declare const NETWORK: networks.Network;
 export declare function logBanner(text: string): void;
 export declare const calculateFundsRequired: (additionalInputValue: number, atomicalSats: number, satsByte: number, mintDataLength?: number, baseTxByteLength?: number) => {

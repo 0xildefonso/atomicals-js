@@ -3,10 +3,10 @@ import { CommandInterface } from "./command.interface";
 import { BaseRequestOptions } from "../interfaces/api.interface";
 export declare class MintInteractiveDftCommand implements CommandInterface {
     private electrumApi;
+    private options;
     private address;
     private ticker;
     private fundingWIF;
-    private options;
-    constructor(electrumApi: ElectrumApiInterface, address: string, ticker: string, fundingWIF: string, options: BaseRequestOptions);
+    constructor(electrumApi: ElectrumApiInterface, options: BaseRequestOptions, address: string, ticker: string, fundingWIF: string);
     run(): Promise<any>;
 }

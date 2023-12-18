@@ -65,7 +65,7 @@ class GetContainerItemValidatedByManifestCommand {
             console.log('getItemCmdResponse', getItemCmdResponse);
             return {
                 success: true,
-                result: getItemCmdResponse
+                data: getItemCmdResponse
             };
         });
     }

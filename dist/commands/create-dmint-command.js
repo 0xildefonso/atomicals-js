@@ -42,7 +42,8 @@ class CreateDmintCommand {
             const leafItems = [];
             const jsonFiles = {};
             for (const file of files) {
-                if (file === '.' || file === '..' || file.startsWith('dmint')) {
+                if (file.startsWith('.') || file.startsWith('dmint')) {
+                    console.log(`Skipping ${file}...`);
                     continue;
                 }
                 counter++;

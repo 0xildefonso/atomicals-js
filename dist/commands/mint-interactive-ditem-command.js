@@ -25,14 +25,14 @@ const crypto_1 = require("bitcoinjs-lib/src/crypto");
 const tinysecp = require('tiny-secp256k1');
 (0, bitcoinjs_lib_1.initEccLib)(tinysecp);
 class MintInteractiveDitemCommand {
-    constructor(electrumApi, container, requestDmitem, manifestJsonFile, address, fundingWIF, options) {
+    constructor(electrumApi, options, container, requestDmitem, manifestJsonFile, address, fundingWIF) {
         this.electrumApi = electrumApi;
+        this.options = options;
         this.container = container;
         this.requestDmitem = requestDmitem;
         this.manifestJsonFile = manifestJsonFile;
         this.address = address;
         this.fundingWIF = fundingWIF;
-        this.options = options;
         this.options = (0, atomical_format_helpers_1.checkBaseRequestOptions)(this.options);
         this.container = this.container.startsWith('#') ? this.container.substring(1) : this.container;
     }
@@ -55,8 +55,8 @@ class MintInteractiveDitemCommand {
                     data: getResponse.data
                 };
             }
-            const parentContainerId = getResponse.data.result.atomical_id;
             // Step 0. Get the details from the manifest
+            const parentContainerId = getResponse.data.result.atomical_id;
             const jsonFile = yield (0, file_utils_1.jsonFileReader)(this.manifestJsonFile);
             const expectedData = jsonFile['data'];
             if (expectedData['args']['request_dmitem'] !== this.requestDmitem) {
@@ -69,16 +69,33 @@ class MintInteractiveDitemCommand {
             // Step 1. Query the container item to see if it's taken
             const getItemCmd = new get_container_item_validated_command_1.GetContainerItemValidatedCommand(this.electrumApi, this.container, this.requestDmitem, 'any', 'any', main, mainHash, proof, false);
             const getItemCmdResponse = yield getItemCmd.run();
-            if (getItemCmdResponse.data.atomical_id) {
-                return {
-                    success: false,
-                    msg: 'Container item is already claimed. Choose another item',
-                    data: getItemCmdResponse.data
-                };
-            }
+            const data = getItemCmdResponse.data;
             console.log(getItemCmdResponse);
+            if (data.atomical_id) {
+                throw new Error('Container item is already claimed. Choose another item');
+            }
+            if (!data.proof_valid) {
+                throw new Error('Item proof is invalid');
+            }
+            if (data.status) {
+                throw new Error(`Item already contains status: ${data.status}`);
+            }
+            if (!data.applicable_rule) {
+                throw new Error('No applicable rule');
+            }
+            if (data.applicable_rule.bitworkc || expectedData['args']['bitworkc']) {
+                if (data.applicable_rule.bitworkc && expectedData['args']['bitworkc'] && (data.applicable_rule.bitworkc !== expectedData['args']['bitworkc'] && data.applicable_rule.bitworkc !== 'any')) {
+                    throw new Error('applicable_rule bitworkc is not compatible with the item args bitworkc');
+                }
+            }
+            if (data.applicable_rule.bitworkr || expectedData['args']['bitworkr']) {
+                if (data.applicable_rule.bitworkr && expectedData['args']['bitworkr'] && (data.applicable_rule.bitworkr !== expectedData['args']['bitworkr'] && data.applicable_rule.bitworkr !== 'any')) {
+                    throw new Error('applicable_rule bitworkr is not compatible with the item args bitworkr');
+                }
+            }
             const atomicalBuilder = new atomical_operation_builder_1.AtomicalOperationBuilder({
                 electrumApi: this.electrumApi,
+                rbf: this.options.rbf,
                 satsbyte: this.options.satsbyte,
                 address: this.address,
                 disableMiningChalk: this.options.disableMiningChalk,
@@ -93,26 +110,12 @@ class MintInteractiveDitemCommand {
             });
             // Set to request a container
             atomicalBuilder.setRequestItem(this.requestDmitem, parentContainerId);
-            yield atomicalBuilder.setData({
+            atomicalBuilder.setData({
                 [expectedData['args']['main']]: fileBuf
             });
-            const data = getItemCmdResponse.data;
-            if (!data.applicable_rule) {
-                throw new Error('No applicable rule');
-            }
             // Attach any requested bitwork
-            if (data.applicable_rule.bitworkc || expectedData['args']['bitworkc']) {
-                if (data.applicable_rule.bitworkc && expectedData['args']['bitworkc'] && (data.applicable_rule.bitworkc !== expectedData['args']['bitworkc'] && data.applicable_rule.bitworkc !== 'any')) {
-                    throw new Error('applicable_rule bitworkc is not compatible with the item args bitworkc');
-                }
-                atomicalBuilder.setBitworkCommit(data.applicable_rule.bitworkc || expectedData['args']['bitworkc']);
-            }
-            if (data.applicable_rule.bitworkr || expectedData['args']['bitworkr']) {
-                if (data.applicable_rule.bitworkr && expectedData['args']['bitworkr'] && (data.applicable_rule.bitworkr !== expectedData['args']['bitworkr'] && data.applicable_rule.bitworkr !== 'any')) {
-                    throw new Error('applicable_rule bitworkr is not compatible with the item args bitworkr');
-                }
-                atomicalBuilder.setBitworkReveal(data.applicable_rule.bitworkr || expectedData['args']['bitworkr']);
-            }
+            atomicalBuilder.setBitworkCommit(data.applicable_rule.bitworkc || expectedData['args']['bitworkc']);
+            atomicalBuilder.setBitworkReveal(data.applicable_rule.bitworkr || expectedData['args']['bitworkr']);
             atomicalBuilder.setArgs(Object.assign({}, expectedData['args']));
             // The receiver output
             atomicalBuilder.addOutput({
@@ -122,7 +125,7 @@ class MintInteractiveDitemCommand {
             const result = yield atomicalBuilder.start(this.fundingWIF);
             return {
                 success: true,
-                result
+                data: result,
             };
         });
     }

@@ -30,10 +30,9 @@ const DEFAULT_SATS_ATOMICAL_UTXO = 1000;
 const SEND_RETRY_SLEEP_SECONDS = 15;
 const SEND_RETRY_ATTEMPTS = 20;
 const DUST_AMOUNT = 546;
-const BASE_BYTES = 10;
-const INPUT_BYTES_BASE = 148;
-const OUTPUT_BYTES_BASE = 34;
-const OP_RETURN_BYTES = 20;
+const BASE_BYTES = 10.5;
+const INPUT_BYTES_BASE = 57.5;
+const OUTPUT_BYTES_BASE = 43;
 const EXCESSIVE_FEE_LIMIT = 500000; // Limit to 1/200 of a BTC for now
 var REALM_CLAIM_TYPE;
 (function (REALM_CLAIM_TYPE) {
@@ -130,6 +129,9 @@ class AtomicalOperationBuilder {
                 throw new Error('dmtOptions required for dmt type');
             }
         }
+    }
+    setRBF(value) {
+        this.options.rbf = value;
     }
     setRequestContainer(name) {
         if (this.options.opType !== 'nft') {
@@ -413,6 +415,11 @@ class AtomicalOperationBuilder {
             let commitTxid = null;
             let revealTxid = null;
             let commitMinedWithBitwork = false;
+            // Placeholder for only estimating tx deposit fee size.
+            if (performBitworkForCommitTx) {
+                copiedData['args']['nonce'] = 9999999;
+                copiedData['args']['time'] = unixtime;
+            }
             console.log('copiedData', copiedData);
             const mockAtomPayload = new command_helpers_1.AtomicalsPayload(copiedData);
             if (this.options.verbose) {
@@ -426,12 +433,9 @@ class AtomicalOperationBuilder {
             const mockBaseCommitForFeeCalculation = (0, command_helpers_1.prepareCommitRevealConfig)(this.options.opType, fundingKeypair, mockAtomPayload);
             const fees = this.calculateFeesRequiredForAccumulatedCommitAndReveal(mockBaseCommitForFeeCalculation.hashLockP2TR.redeem.output.length);
             ////////////////////////////////////////////////////////////////////////
-            // Begin Reveal Transaction
+            // Begin Commit Transaction
             ////////////////////////////////////////////////////////////////////////
             if (performBitworkForCommitTx) {
-                copiedData['args'] = copiedData['args'] || {};
-                copiedData['args']['nonce'] = 9999999; // placeholder for only estimating tx deposit fee size
-                copiedData['args']['time'] = unixtime; // placeholder for only estimating tx deposit fee size
                 const fundingUtxo = yield (0, select_funding_utxo_1.getFundingUtxo)(this.options.electrumApi, fundingKeypair.address, fees.commitAndRevealFeePlusOutputs);
                 printBitworkLog(this.bitworkInfoCommit, true);
                 this.options.electrumApi.close();
@@ -450,6 +454,7 @@ class AtomicalOperationBuilder {
                     let psbtStart = new bitcoinjs_lib_1.Psbt({ network: command_helpers_1.NETWORK });
                     psbtStart.setVersion(1);
                     psbtStart.addInput({
+                        sequence: this.options.rbf ? command_helpers_1.RBF_INPUT_SEQUENCE : undefined,
                         hash: fundingUtxo.txid,
                         index: fundingUtxo.index,
                         witnessUtxo: { value: fundingUtxo.value, script: Buffer.from(fundingKeypair.output, 'hex') },
@@ -457,7 +462,7 @@ class AtomicalOperationBuilder {
                     });
                     psbtStart.addOutput({
                         address: updatedBaseCommit.scriptP2TR.address,
-                        value: fees.revealFeePlusOutputs
+                        value: this.getOutputValueForCommit(fees),
                     });
                     this.addCommitChangeOutputIfRequired(fundingUtxo.value, fees, psbtStart, fundingKeypair.address);
                     psbtStart.signInput(0, fundingKeypair.tweakedChildNode);
@@ -470,9 +475,9 @@ class AtomicalOperationBuilder {
                     if (performBitworkForCommitTx && (0, atomical_format_helpers_1.hasValidBitwork)(checkTxid, (_d = this.bitworkInfoCommit) === null || _d === void 0 ? void 0 : _d.prefix, (_e = this.bitworkInfoCommit) === null || _e === void 0 ? void 0 : _e.ext)) {
                         process.stdout.clearLine(0);
                         process.stdout.cursorTo(0);
-                        process.stdout.write(chalk.green(checkTxid, ' nonces: ' + noncesGenerated));
-                        console.log('\nBitwork matches commit txid! ', prelimTx.getId(), '@ time: ' + Math.floor(Date.now() / 1000));
-                        // We found a solution, therefore broadcast it 
+                        process.stdout.write(chalk.green(checkTxid, ` nonces: ${noncesGenerated} (${nonce})`));
+                        console.log('\nBitwork matches commit txid! ', prelimTx.getId(), `@ time: ${unixtime}`);
+                        // We found a solution, therefore broadcast it
                         const interTx = psbtStart.extractTransaction();
                         const rawtx = interTx.toHex();
                         AtomicalOperationBuilder.finalSafetyCheckForExcessiveFee(psbtStart, interTx);
@@ -503,7 +508,7 @@ class AtomicalOperationBuilder {
             // Begin Reveal Transaction
             ////////////////////////////////////////////////////////////////////////
             // The scriptP2TR and hashLockP2TR will contain the utxo needed for the commit and now can be revealed
-            const utxoOfCommitAddress = yield (0, select_funding_utxo_1.getFundingUtxo)(this.options.electrumApi, scriptP2TR.address, fees.revealFeePlusOutputs, commitMinedWithBitwork, 5);
+            const utxoOfCommitAddress = yield (0, select_funding_utxo_1.getFundingUtxo)(this.options.electrumApi, scriptP2TR.address, this.getOutputValueForCommit(fees), commitMinedWithBitwork, 5);
             commitTxid = utxoOfCommitAddress.txid;
             atomicalId = commitTxid + 'i0'; // Atomicals are always minted at the 0'th output
             const tapLeafScript = {
@@ -523,6 +528,7 @@ class AtomicalOperationBuilder {
                 let psbt = new bitcoinjs_lib_1.Psbt({ network: command_helpers_1.NETWORK });
                 psbt.setVersion(1);
                 psbt.addInput({
+                    sequence: this.options.rbf ? command_helpers_1.RBF_INPUT_SEQUENCE : undefined,
                     hash: utxoOfCommitAddress.txid,
                     index: utxoOfCommitAddress.vout,
                     witnessUtxo: { value: utxoOfCommitAddress.value, script: hashLockP2TR.output },
@@ -534,6 +540,7 @@ class AtomicalOperationBuilder {
                 // Add any additional inputs that were assigned
                 for (const additionalInput of this.inputUtxos) {
                     psbt.addInput({
+                        sequence: this.options.rbf ? command_helpers_1.RBF_INPUT_SEQUENCE : undefined,
                         hash: additionalInput.utxo.hash,
                         index: additionalInput.utxo.index,
                         witnessUtxo: additionalInput.utxo.witnessUtxo,
@@ -554,6 +561,7 @@ class AtomicalOperationBuilder {
                 }
                 if (parentAtomicalInfo) {
                     psbt.addInput({
+                        sequence: this.options.rbf ? command_helpers_1.RBF_INPUT_SEQUENCE : undefined,
                         hash: parentAtomicalInfo.parentUtxoPartial.hash,
                         index: parentAtomicalInfo.parentUtxoPartial.index,
                         witnessUtxo: parentAtomicalInfo.parentUtxoPartial.witnessUtxo,
@@ -653,6 +661,7 @@ class AtomicalOperationBuilder {
             }
             if (this.options.opType === 'dat') {
                 ret['data']['dataId'] = revealTxid + 'i0';
+                ret['data']['urn'] = 'atom:btc:dat:' + revealTxid + 'i0';
             }
             return ret;
         });
@@ -706,24 +715,41 @@ class AtomicalOperationBuilder {
         return sum;
     }
     calculateAmountRequiredForReveal(hashLockP2TROutputLen = 0) {
-        const ARGS_BYTES = 20;
-        const BITWORK_BYTES = 5 + 10 + 4 + 10 + 4 + 10 + 1 + 10;
-        const EXTRA_BUFFER = 10;
-        return this.options.satsbyte *
+        // <Previous txid> <Output index> <Length of scriptSig> <Sequence number>
+        // 32 + 4 + 1 + 4 = 41
+        // <Witness stack item length> <Signature> ... <Control block>
+        // (1 + 65 + 34) / 4 = 25
+        // Total: 41 + 25 = 66
+        const REVEAL_INPUT_BYTES_BASE = 66;
+        let hashLockCompactSizeBytes = 9;
+        if (hashLockP2TROutputLen <= 252) {
+            hashLockCompactSizeBytes = 1;
+        }
+        else if (hashLockP2TROutputLen <= 0xffff) {
+            hashLockCompactSizeBytes = 3;
+        }
+        else if (hashLockP2TROutputLen <= 0xffffffff) {
+            hashLockCompactSizeBytes = 5;
+        }
+        return Math.ceil(this.options.satsbyte *
             (BASE_BYTES +
-                ((1 + this.inputUtxos.length) * INPUT_BYTES_BASE) +
-                (this.additionalOutputs.length * OUTPUT_BYTES_BASE) +
-                OP_RETURN_BYTES +
-                ARGS_BYTES +
-                BITWORK_BYTES +
-                EXTRA_BUFFER +
-                hashLockP2TROutputLen);
+                // Reveal input
+                REVEAL_INPUT_BYTES_BASE +
+                ((hashLockCompactSizeBytes + hashLockP2TROutputLen) / 4) +
+                // Additional inputs
+                this.inputUtxos.length * INPUT_BYTES_BASE +
+                // Outputs
+                this.additionalOutputs.length * OUTPUT_BYTES_BASE));
     }
     calculateFeesRequiredForCommit() {
-        return this.options.satsbyte *
+        return Math.ceil(this.options.satsbyte *
             (BASE_BYTES +
                 (1 * INPUT_BYTES_BASE) +
-                (1 * OUTPUT_BYTES_BASE));
+                (1 * OUTPUT_BYTES_BASE)));
+    }
+    getOutputValueForCommit(fees) {
+        // Note that `Additional inputs` refers to the additional inputs in a reveal tx.
+        return fees.revealFeePlusOutputs - this.getTotalAdditionalInputValues();
     }
     getAdditionalFundingRequiredForReveal() {
         return 0;
@@ -758,7 +784,8 @@ class AtomicalOperationBuilder {
         if (currentSatoshisFeePlanned <= 0) {
             return;
         }
-        const excessSatoshisFound = currentSatoshisFeePlanned - revealFee;
+        // In order to keep the fee-rate unchanged, we should add extra fee for the new added change output.
+        const excessSatoshisFound = currentSatoshisFeePlanned - revealFee - this.options.satsbyte * OUTPUT_BYTES_BASE;
         // There were no excess satoshis, therefore no change is due
         if (excessSatoshisFound <= 0) {
             return;
@@ -777,14 +804,15 @@ class AtomicalOperationBuilder {
     * @returns
     */
     addCommitChangeOutputIfRequired(extraInputValue, fee, pbst, address) {
-        const totalInputsValue = extraInputValue + this.getTotalAdditionalInputValues();
-        const totalOutputsValue = this.getTotalAdditionalOutputValues() + fee.revealFeePlusOutputs;
+        const totalInputsValue = extraInputValue;
+        const totalOutputsValue = this.getOutputValueForCommit(fee);
         const calculatedFee = totalInputsValue - totalOutputsValue;
         // It will be invalid, but at least we know we don't need to add change
         if (calculatedFee <= 0) {
             return;
         }
-        const expectedFee = fee.commitFeeOnly;
+        // In order to keep the fee-rate unchanged, we should add extra fee for the new added change output.
+        const expectedFee = fee.commitFeeOnly + this.options.satsbyte * OUTPUT_BYTES_BASE;
         // console.log('expectedFee', expectedFee);
         const differenceBetweenCalculatedAndExpected = calculatedFee - expectedFee;
         if (differenceBetweenCalculatedAndExpected <= 0) {

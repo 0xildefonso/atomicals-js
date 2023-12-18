@@ -28,8 +28,9 @@ const ECPair = (0, ecpair_1.ECPairFactory)(tinysecp);
 const atomical_format_helpers_1 = require("../utils/atomical-format-helpers");
 const protocol_tags_1 = require("../types/protocol-tags");
 class PendingSubrealmsCommand {
-    constructor(electrumApi, address, fundingWIF, satsbyte, display) {
+    constructor(electrumApi, options, address, fundingWIF, satsbyte, display) {
         this.electrumApi = electrumApi;
+        this.options = options;
         this.address = address;
         this.fundingWIF = fundingWIF;
         this.satsbyte = satsbyte;
@@ -176,6 +177,7 @@ class PendingSubrealmsCommand {
             console.log(`Detected UTXO (${utxo.txid}:${utxo.vout}) with value ${utxo.value} for funding the operation...`);
             // Add the funding input
             psbt.addInput({
+                sequence: this.options.rbf ? command_helpers_1.RBF_INPUT_SEQUENCE : undefined,
                 hash: utxo.txid,
                 index: utxo.outputIndex,
                 witnessUtxo: { value: utxo.value, script: keypairFundingInfo.output },

@@ -14,7 +14,7 @@ const create_key_pair_1 = require("../utils/create-key-pair");
 class WalletCreateCommand {
     run() {
         return __awaiter(this, void 0, void 0, function* () {
-            const keypairs = yield (0, create_key_pair_1.createPrimaryAndFundingKeyPairs)();
+            const keypairs = yield (0, create_key_pair_1.createPrimaryAndFundingImportedKeyPairs)();
             return {
                 success: true,
                 data: keypairs

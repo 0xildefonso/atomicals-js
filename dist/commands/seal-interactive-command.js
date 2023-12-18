@@ -19,12 +19,12 @@ const atomical_operation_builder_1 = require("../utils/atomical-operation-builde
 const tinysecp = require('tiny-secp256k1');
 (0, bitcoinjs_lib_1.initEccLib)(tinysecp);
 class SealInteractiveCommand {
-    constructor(electrumApi, atomicalId, owner, funding, options) {
+    constructor(electrumApi, options, atomicalId, owner, funding) {
         this.electrumApi = electrumApi;
+        this.options = options;
         this.atomicalId = atomicalId;
         this.owner = owner;
         this.funding = funding;
-        this.options = options;
     }
     run() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -32,6 +32,7 @@ class SealInteractiveCommand {
             const { atomicalInfo, locationInfo, inputUtxoPartial } = yield (0, command_helpers_1.getAndCheckAtomicalInfo)(this.electrumApi, this.atomicalId, this.owner.address);
             const atomicalBuilder = new atomical_operation_builder_1.AtomicalOperationBuilder({
                 electrumApi: this.electrumApi,
+                rbf: this.options.rbf,
                 satsbyte: this.options.satsbyte,
                 address: this.owner.address,
                 disableMiningChalk: this.options.disableMiningChalk,

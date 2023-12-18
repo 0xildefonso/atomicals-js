@@ -1,20 +1,21 @@
 import { ElectrumApiInterface, IUnspentResponse } from "./electrum-api.interface";
+import { UTXO } from "../types/UTXO.interface";
 export declare class ElectrumApi implements ElectrumApiInterface {
     private baseUrl;
     private usePost;
     private isOpenFlag;
     private constructor();
     resetConnection(): Promise<void>;
-    static createClient(url: string): ElectrumApi;
+    static createClient(url: string, usePost?: boolean): ElectrumApi;
     open(): Promise<any>;
     isOpen(): boolean;
     close(): Promise<any>;
     call(method: any, params: any): Promise<any>;
-    sendTransaction(signedRawtx: string): Promise<any>;
-    getTx(txid: string, verbose?: boolean): Promise<any>;
+    sendTransaction(signedRawTx: string): Promise<any>;
+    getTx(txId: string, verbose?: boolean): Promise<any>;
     getUnspentAddress(address: string): Promise<IUnspentResponse | any>;
-    getUnspentScripthash(scripthash: string): Promise<IUnspentResponse | any>;
-    waitUntilUTXO(address: string, satoshis: number, intervalSeconds?: number, exactSatoshiAmount?: boolean): Promise<any>;
+    getUnspentScripthash(scriptHash: string): Promise<IUnspentResponse | any>;
+    waitUntilUTXO(address: string, satoshis: number, intervalSeconds?: number, exactSatoshiAmount?: boolean): Promise<UTXO>;
     serverVersion(): Promise<any>;
     broadcast(rawtx: string, force?: boolean): Promise<any>;
     dump(): Promise<any>;

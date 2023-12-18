@@ -28,6 +28,7 @@ export declare enum REQUEST_NAME_TYPE {
 }
 export interface AtomicalOperationBuilderOptions {
     electrumApi: ElectrumApiInterface;
+    rbf?: boolean;
     satsbyte?: number;
     address: string;
     opType: 'nft' | 'ft' | 'dft' | 'dmt' | 'dat' | 'mod' | 'evt' | 'sl' | 'x' | 'y';
@@ -82,6 +83,7 @@ export declare class AtomicalOperationBuilder {
     private inputUtxos;
     private additionalOutputs;
     constructor(options: AtomicalOperationBuilderOptions);
+    setRBF(value: boolean): void;
     setRequestContainer(name: string): void;
     setRequestRealm(name: string): void;
     setRequestSubrealm(name: string, parentRealmId: string, realmClaimType: REALM_CLAIM_TYPE): void;
@@ -136,6 +138,7 @@ export declare class AtomicalOperationBuilder {
     getTotalAdditionalOutputValues(): number;
     calculateAmountRequiredForReveal(hashLockP2TROutputLen?: number): number;
     calculateFeesRequiredForCommit(): number;
+    getOutputValueForCommit(fees: FeeCalculations): number;
     getAdditionalFundingRequiredForReveal(): number | null;
     /**
      * Get the commit and reveal fee. The commit fee assumes it is chained together

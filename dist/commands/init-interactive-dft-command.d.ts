@@ -3,7 +3,8 @@ import { CommandInterface } from "./command.interface";
 import { BaseRequestOptions } from "../interfaces/api.interface";
 export declare class InitInteractiveDftCommand implements CommandInterface {
     private electrumApi;
-    private files;
+    private options;
+    private file;
     private address;
     private requestTicker;
     private mintAmount;
@@ -12,7 +13,6 @@ export declare class InitInteractiveDftCommand implements CommandInterface {
     private mintBitworkc;
     private mintBitworkr;
     private fundingWIF;
-    private options;
-    constructor(electrumApi: ElectrumApiInterface, files: string[], address: string, requestTicker: string, mintAmount: number, maxMints: number, mintHeight: number, mintBitworkc: string | null, mintBitworkr: string | null, fundingWIF: string, options: BaseRequestOptions);
+    constructor(electrumApi: ElectrumApiInterface, options: BaseRequestOptions, file: string, address: string, requestTicker: string, mintAmount: number, maxMints: number, mintHeight: number, mintBitworkc: string | null, mintBitworkr: string | null, fundingWIF: string);
     run(): Promise<any>;
 }

@@ -3,10 +3,10 @@ import { CommandInterface } from "./command.interface";
 import { BaseRequestOptions } from "../interfaces/api.interface";
 export declare class MintInteractiveNftCommand implements CommandInterface {
     private electrumApi;
+    private options;
     private files;
     private address;
     private fundingWIF;
-    private options;
-    constructor(electrumApi: ElectrumApiInterface, files: string[], address: string, fundingWIF: string, options: BaseRequestOptions);
+    constructor(electrumApi: ElectrumApiInterface, options: BaseRequestOptions, files: string[], address: string, fundingWIF: string);
     run(): Promise<any>;
 }

@@ -27,13 +27,13 @@ const tinysecp = require('tiny-secp256k1');
 (0, bitcoinjs_lib_1.initEccLib)(tinysecp);
 const ECPair = (0, ecpair_1.ECPairFactory)(tinysecp);
 class MintInteractiveSubrealmCommand {
-    constructor(electrumApi, requestSubRealm, address, fundingWIF, owner, options) {
+    constructor(electrumApi, options, requestSubRealm, address, fundingWIF, owner) {
         this.electrumApi = electrumApi;
+        this.options = options;
         this.requestSubRealm = requestSubRealm;
         this.address = address;
         this.fundingWIF = fundingWIF;
         this.owner = owner;
-        this.options = options;
         this.options = (0, atomical_format_helpers_1.checkBaseRequestOptions)(this.options);
         this.requestSubRealm = this.requestSubRealm.startsWith('+') ? this.requestSubRealm.substring(1) : this.requestSubRealm;
     }

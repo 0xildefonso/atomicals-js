@@ -1,13 +1,6 @@
-import { ElectrumApiInterface } from "../api/electrum-api.interface";
-export declare const getInputUtxoFromTxid: (utxo: {
-    txId: string;
-    outputIndex: number;
-    value: number;
-}, electrumx: ElectrumApiInterface) => Promise<{
-    txId: string;
-    outputIndex: number;
-    value: number;
-}>;
+import { type ElectrumApiInterface } from "../api/electrum-api.interface";
+import { type UTXO } from "../types/UTXO.interface";
+export declare const getInputUtxoFromTxid: (utxo: UTXO, electrumx: ElectrumApiInterface) => Promise<UTXO>;
 export declare const getFundingSelectedUtxo: (address: string, minFundingSatoshis: number, electrumx: ElectrumApiInterface) => Promise<any>;
 /**
      * Gets a funding UTXO and also displays qr code for quick deposit

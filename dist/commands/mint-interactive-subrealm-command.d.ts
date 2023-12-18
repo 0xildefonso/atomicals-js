@@ -8,11 +8,11 @@ export interface ResolvedRealm {
 }
 export declare class MintInteractiveSubrealmCommand implements CommandInterface {
     private electrumApi;
+    private options;
     private requestSubRealm;
     private address;
     private fundingWIF;
     private owner;
-    private options;
-    constructor(electrumApi: ElectrumApiInterface, requestSubRealm: string, address: string, fundingWIF: string, owner: IWalletRecord, options: BaseRequestOptions);
+    constructor(electrumApi: ElectrumApiInterface, options: BaseRequestOptions, requestSubRealm: string, address: string, fundingWIF: string, owner: IWalletRecord);
     run(): Promise<any>;
 }

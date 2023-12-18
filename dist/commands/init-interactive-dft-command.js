@@ -47,9 +47,10 @@ const promptContinue = () => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 class InitInteractiveDftCommand {
-    constructor(electrumApi, files, address, requestTicker, mintAmount, maxMints, mintHeight, mintBitworkc, mintBitworkr, fundingWIF, options) {
+    constructor(electrumApi, options, file, address, requestTicker, mintAmount, maxMints, mintHeight, mintBitworkc, mintBitworkr, fundingWIF) {
         this.electrumApi = electrumApi;
-        this.files = files;
+        this.options = options;
+        this.file = file;
         this.address = address;
         this.requestTicker = requestTicker;
         this.mintAmount = mintAmount;
@@ -58,12 +59,11 @@ class InitInteractiveDftCommand {
         this.mintBitworkc = mintBitworkc;
         this.mintBitworkr = mintBitworkr;
         this.fundingWIF = fundingWIF;
-        this.options = options;
         this.options = (0, atomical_format_helpers_1.checkBaseRequestOptions)(this.options);
         this.requestTicker = this.requestTicker.startsWith('$') ? this.requestTicker.substring(1) : this.requestTicker;
         (0, atomical_format_helpers_1.isValidBitworkMinimum)(this.options.bitworkc);
-        if (this.maxMints > 100000 || this.maxMints < 1) {
-            throw new Error('max mints must be between 1 and 200,000');
+        if (this.maxMints > 500000 || this.maxMints < 1) {
+            throw new Error('max mints must be between 1 and 500,000');
         }
         if (this.mintAmount > 100000000 || this.mintAmount < 546) {
             throw new Error('mint amount must be between 546 and 100,000,000');
@@ -71,15 +71,16 @@ class InitInteractiveDftCommand {
     }
     run() {
         return __awaiter(this, void 0, void 0, function* () {
-            let filesData = yield (0, command_helpers_1.prepareFilesDataAsObject)(this.files);
+            // let filesData = await prepareFilesDataAsObject(this.files);
+            let filesData = yield (0, command_helpers_1.readJsonFileAsCompleteDataObjectEncodeAtomicalIds)(this.file, true);
             console.log('Initializing Decentralized FT Token');
             console.log('-----------------------');
             let supply = this.maxMints * this.mintAmount;
             console.log('Total Supply (Satoshis): ', supply);
             console.log('Total Supply (BTC): ', supply / 100000000);
             let decimals = 0;
-            if (filesData['meta'] && filesData['meta']['decimals']) {
-                decimals = parseInt(filesData['meta']['decimals'], 10);
+            if (filesData['decimals']) {
+                decimals = parseInt(filesData['decimals'], 10);
             }
             console.log('Decimals: ', decimals);
             if (!decimals || decimals === 0) {
@@ -113,6 +114,7 @@ class InitInteractiveDftCommand {
             }
             const atomicalBuilder = new atomical_operation_builder_1.AtomicalOperationBuilder({
                 electrumApi: this.electrumApi,
+                rbf: this.options.rbf,
                 satsbyte: this.options.satsbyte,
                 address: this.address,
                 opType: 'dft',

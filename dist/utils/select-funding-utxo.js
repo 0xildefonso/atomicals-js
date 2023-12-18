@@ -10,19 +10,17 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.getFundingUtxo = exports.getFundingSelectedUtxo = exports.getInputUtxoFromTxid = void 0;
-const bitcoin = require('bitcoinjs-lib');
-const ecpair_1 = require("ecpair");
+const bitcoin = require("bitcoinjs-lib");
 const ecc = require("tiny-secp256k1");
 const qrcode = require("qrcode-terminal");
 bitcoin.initEccLib(ecc);
-const ECPair = (0, ecpair_1.default)(ecc);
 const getInputUtxoFromTxid = (utxo, electrumx) => __awaiter(void 0, void 0, void 0, function* () {
     const txResult = yield electrumx.getTx(utxo.txId);
     if (!txResult || !txResult.success) {
         throw `Transaction not found in getInputUtxoFromTxid ${utxo.txId}`;
     }
     const tx = txResult.tx;
-    utxo['nonWitnessUtxo'] = Buffer.from(tx, 'hex');
+    utxo.nonWitnessUtxo = Buffer.from(tx, 'hex');
     const reconstructedTx = bitcoin.Transaction.fromHex(tx.tx);
     if (reconstructedTx.getId() !== utxo.txId) {
         throw "getInputUtxoFromTxid txid mismatch error";
@@ -65,7 +63,7 @@ const getFundingUtxo = (electrumxApi, address, amount, suppressDepositAddressInf
     }
     console.log(`...`);
     console.log(`...`);
-    let fundingUtxo = yield electrumxApi.waitUntilUTXO(address, amount, seconds ? 5 : seconds, false);
+    const fundingUtxo = yield electrumxApi.waitUntilUTXO(address, amount, seconds ? 5 : seconds, false);
     console.log(`Detected Funding UTXO (${fundingUtxo.txid}:${fundingUtxo.vout}) with value ${fundingUtxo.value} for funding...`);
     return fundingUtxo;
 });

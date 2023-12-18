@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAndCheckAtomicalInfo = exports.normalizeIdentifier = exports.guessPrefixType = exports.appendMintUpdateRevealScript = exports.AtomicalsPayload = exports.encodeFiles = exports.prepareArgsMetaCtx = exports.prepareObjectfield = exports.prepareFilesDataBackup = exports.readJsonFileAsCompleteDataObjectEncodeHash = exports.readJsonFileAsCompleteDataObjectEncodeAtomicalIds = exports.prepareFilesDataAsObject = exports.readFileAsCompleteDataObject = exports.prepareFilesData = exports.readAsAtomicalFileData = exports.prepareCommitRevealConfig = exports.prepareCommitRevealConfig2 = exports.appendMintUpdateRevealScript2 = exports.calculateUtxoFundsRequired = exports.calculateFTFundsRequired = exports.calculateFundsRequired = exports.logBanner = exports.NETWORK = void 0;
+exports.getAndCheckAtomicalInfo = exports.normalizeIdentifier = exports.guessPrefixType = exports.appendMintUpdateRevealScript = exports.AtomicalsPayload = exports.encodeFiles = exports.prepareArgsMetaCtx = exports.prepareObjectfield = exports.prepareFilesDataBackup = exports.readJsonFileAsCompleteDataObjectEncodeHash = exports.readJsonFileAsCompleteDataObjectEncodeAtomicalIds = exports.prepareFilesDataAsObject = exports.readFileAsCompleteDataObject = exports.prepareFilesData = exports.readAsAtomicalFileData = exports.prepareCommitRevealConfig = exports.prepareCommitRevealConfig2 = exports.appendMintUpdateRevealScript2 = exports.calculateUtxoFundsRequired = exports.calculateFTFundsRequired = exports.calculateFundsRequired = exports.logBanner = exports.NETWORK = exports.RBF_INPUT_SEQUENCE = void 0;
 const path_1 = require("path");
 const mime = require("mime-types");
 const file_utils_1 = require("../utils/file-utils");
@@ -22,6 +22,7 @@ const atomical_format_helpers_1 = require("../utils/atomical-format-helpers");
 const address_helpers_1 = require("../utils/address-helpers");
 const dotenv = require("dotenv");
 dotenv.config();
+exports.RBF_INPUT_SEQUENCE = 0xfffffffd;
 exports.NETWORK = process.env.NETWORK === 'testnet' ? bitcoinjs_lib_1.networks.testnet : process.env.NETWORK == "regtest" ? bitcoinjs_lib_1.networks.regtest : bitcoinjs_lib_1.networks.bitcoin;
 function logBanner(text) {
     console.log("====================================================================");

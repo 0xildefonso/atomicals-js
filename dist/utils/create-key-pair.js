@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.createNKeyPairs = exports.createPrimaryAndFundingKeyPairs = exports.createKeyPair = exports.toXOnly = void 0;
+exports.createNKeyPairs = exports.createPrimaryAndFundingImportedKeyPairs = exports.createKeyPair = exports.toXOnly = void 0;
 const bitcoin = require('bitcoinjs-lib');
 const ecpair_1 = require("ecpair");
 const ecc = require("tiny-secp256k1");
@@ -62,7 +62,7 @@ const createKeyPair = (phrase = '', path = `m/44'/0'/0'/0/0`) => __awaiter(void 
     };
 });
 exports.createKeyPair = createKeyPair;
-const createPrimaryAndFundingKeyPairs = (phrase, path) => __awaiter(void 0, void 0, void 0, function* () {
+const createPrimaryAndFundingImportedKeyPairs = (phrase, path, n) => __awaiter(void 0, void 0, void 0, function* () {
     let phraseResult = phrase;
     if (!phraseResult) {
         phraseResult = yield (0, create_mnemonic_phrase_1.createMnemonicPhrase)();
@@ -72,13 +72,22 @@ const createPrimaryAndFundingKeyPairs = (phrase, path) => __awaiter(void 0, void
     if (path) {
         pathUsed = path;
     }
+    const imported = {};
+    if (n) {
+        for (let i = 2; i < n + 2; i++) {
+            imported[i + ''] = yield (0, exports.createKeyPair)(phraseResult, `${pathUsed}/0/` + i);
+        }
+    }
     return {
-        phrase: phraseResult,
-        primary: yield (0, exports.createKeyPair)(phraseResult, `${pathUsed}/0/0`),
-        funding: yield (0, exports.createKeyPair)(phraseResult, `${pathUsed}/1/0`)
+        wallet: {
+            phrase: phraseResult,
+            primary: yield (0, exports.createKeyPair)(phraseResult, `${pathUsed}/0/0`),
+            funding: yield (0, exports.createKeyPair)(phraseResult, `${pathUsed}/1/0`)
+        },
+        imported
     };
 });
-exports.createPrimaryAndFundingKeyPairs = createPrimaryAndFundingKeyPairs;
+exports.createPrimaryAndFundingImportedKeyPairs = createPrimaryAndFundingImportedKeyPairs;
 const createNKeyPairs = (phrase, n = 1) => __awaiter(void 0, void 0, void 0, function* () {
     const keypairs = [];
     for (let i = 0; i < n; i++) {

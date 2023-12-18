@@ -19,12 +19,12 @@ const atomical_operation_builder_1 = require("../utils/atomical-operation-builde
 const tinysecp = require('tiny-secp256k1');
 (0, bitcoinjs_lib_1.initEccLib)(tinysecp);
 class DisableSubrealmRulesInteractiveCommand {
-    constructor(electrumApi, atomicalId, funding, owner, options) {
+    constructor(electrumApi, options, atomicalId, funding, owner) {
         this.electrumApi = electrumApi;
+        this.options = options;
         this.atomicalId = atomicalId;
         this.funding = funding;
         this.owner = owner;
-        this.options = options;
     }
     run() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -32,6 +32,7 @@ class DisableSubrealmRulesInteractiveCommand {
             const { atomicalInfo, locationInfo, inputUtxoPartial } = yield (0, command_helpers_1.getAndCheckAtomicalInfo)(this.electrumApi, this.atomicalId, this.owner.address, 'NFT', null);
             const atomicalBuilder = new atomical_operation_builder_1.AtomicalOperationBuilder({
                 electrumApi: this.electrumApi,
+                rbf: this.options.rbf,
                 satsbyte: this.options.satsbyte,
                 address: this.owner.address,
                 disableMiningChalk: this.options.disableMiningChalk,

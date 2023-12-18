@@ -2,6 +2,7 @@ import { ElectrumApiInterface } from "../api/electrum-api.interface";
 import { CommandInterface } from "./command.interface";
 import { KeyPairInfo } from "../utils/address-keypair-path";
 import { IValidatedWalletInfo } from "../utils/validate-wallet-storage";
+import { BaseRequestOptions } from "../interfaces/api.interface";
 export interface IAtomicalBalanceSummary {
     confirmed: number;
     type: 'FT' | 'NFT';
@@ -40,14 +41,15 @@ export interface TransferFtConfigInterface {
 }
 export declare class TransferInteractiveFtCommand implements CommandInterface {
     private electrumApi;
+    private options;
     private atomicalAliasOrId;
     private currentOwnerAtomicalWIF;
     private fundingWIF;
     private validatedWalletInfo;
     private satsbyte;
     private nofunding;
-    private atomicalIdReceipt;
-    constructor(electrumApi: ElectrumApiInterface, atomicalAliasOrId: string, currentOwnerAtomicalWIF: string, fundingWIF: string, validatedWalletInfo: IValidatedWalletInfo, satsbyte: number, nofunding: boolean, atomicalIdReceipt: string);
+    private atomicalIdReceipt?;
+    constructor(electrumApi: ElectrumApiInterface, options: BaseRequestOptions, atomicalAliasOrId: string, currentOwnerAtomicalWIF: string, fundingWIF: string, validatedWalletInfo: IValidatedWalletInfo, satsbyte: number, nofunding: boolean, atomicalIdReceipt?: string | undefined);
     run(): Promise<any>;
     promptTransferOptions(atomicalId: string, address: any): Promise<TransferFtConfigInterface>;
     promptIfDetectedMultipleAtomicalsAtSameUtxos(atomicalId: string, selectedUtxos: ISelectedUtxo[]): Promise<void>;

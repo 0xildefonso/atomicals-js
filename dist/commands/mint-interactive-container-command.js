@@ -25,12 +25,12 @@ const tinysecp = require('tiny-secp256k1');
 (0, bitcoinjs_lib_1.initEccLib)(tinysecp);
 const ECPair = (0, ecpair_1.ECPairFactory)(tinysecp);
 class MintInteractiveContainerCommand {
-    constructor(electrumApi, requestContainer, address, fundingWIF, options) {
+    constructor(electrumApi, options, requestContainer, address, fundingWIF) {
         this.electrumApi = electrumApi;
+        this.options = options;
         this.requestContainer = requestContainer;
         this.address = address;
         this.fundingWIF = fundingWIF;
-        this.options = options;
         this.options = (0, atomical_format_helpers_1.checkBaseRequestOptions)(this.options);
         this.requestContainer = this.requestContainer.startsWith('#') ? this.requestContainer.substring(1) : this.requestContainer;
         (0, atomical_format_helpers_1.isValidBitworkMinimum)(this.options.bitworkc);
@@ -55,6 +55,7 @@ class MintInteractiveContainerCommand {
             }
             const atomicalBuilder = new atomical_operation_builder_1.AtomicalOperationBuilder({
                 electrumApi: this.electrumApi,
+                rbf: this.options.rbf,
                 satsbyte: this.options.satsbyte,
                 address: this.address,
                 disableMiningChalk: this.options.disableMiningChalk,

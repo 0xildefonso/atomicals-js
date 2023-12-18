@@ -4,12 +4,12 @@ import { BaseRequestOptions } from "../interfaces/api.interface";
 import { IWalletRecord } from "../utils/validate-wallet-storage";
 export declare class SetRelationInteractiveCommand implements CommandInterface {
     private electrumApi;
+    private options;
     private atomicalId;
     private relationName;
     private values;
     private owner;
     private funding;
-    private options;
-    constructor(electrumApi: ElectrumApiInterface, atomicalId: string, relationName: string, values: string[], owner: IWalletRecord, funding: IWalletRecord, options: BaseRequestOptions);
+    constructor(electrumApi: ElectrumApiInterface, options: BaseRequestOptions, atomicalId: string, relationName: string, values: string[], owner: IWalletRecord, funding: IWalletRecord);
     run(): Promise<any>;
 }

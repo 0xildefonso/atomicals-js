@@ -1,6 +1,7 @@
 import { ElectrumApiInterface } from "../api/electrum-api.interface";
 import { CommandInterface } from "./command.interface";
 import { ApplicableRule } from "../interfaces/atomical-status.interface";
+import { BaseRequestOptions } from "../interfaces/api.interface";
 export interface PendingSubrealmsCommandResultInterface {
     success: boolean;
     message?: string;
@@ -32,11 +33,12 @@ export interface SubrealmAwaitingPaymentItemInterface {
 }
 export declare class PendingSubrealmsCommand implements CommandInterface {
     private electrumApi;
+    private options;
     private address;
     private fundingWIF;
     private satsbyte;
     private display;
-    constructor(electrumApi: ElectrumApiInterface, address: string, fundingWIF: string, satsbyte: number, display: boolean);
+    constructor(electrumApi: ElectrumApiInterface, options: BaseRequestOptions, address: string, fundingWIF: string, satsbyte: number, display: boolean);
     static isCurrentAtomicalPendingCandidate(entry: any): boolean;
     static isPendingCandidate(entry: any): boolean;
     run(): Promise<any>;

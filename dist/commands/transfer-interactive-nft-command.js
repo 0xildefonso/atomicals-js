@@ -30,8 +30,9 @@ const tinysecp = require('tiny-secp256k1');
 (0, bitcoinjs_lib_1.initEccLib)(tinysecp);
 const ECPair = (0, ecpair_1.ECPairFactory)(tinysecp);
 class TransferInteractiveNftCommand {
-    constructor(electrumApi, atomicalAliasOrId, currentOwnerAtomicalWIF, receiveAddress, fundingWIF, satsbyte, satsoutput) {
+    constructor(electrumApi, options, atomicalAliasOrId, currentOwnerAtomicalWIF, receiveAddress, fundingWIF, satsbyte, satsoutput) {
         this.electrumApi = electrumApi;
+        this.options = options;
         this.atomicalAliasOrId = atomicalAliasOrId;
         this.currentOwnerAtomicalWIF = currentOwnerAtomicalWIF;
         this.receiveAddress = receiveAddress;
@@ -149,6 +150,7 @@ class TransferInteractiveNftCommand {
             const psbt = new bitcoin.Psbt({ network: command_helpers_1.NETWORK });
             // Add the atomical input, the value from the input counts towards the total satoshi amount required
             psbt.addInput({
+                sequence: this.options.rbf ? command_helpers_1.RBF_INPUT_SEQUENCE : undefined,
                 hash: location.txid,
                 index: location.index,
                 witnessUtxo: { value: location.value, script: Buffer.from(location.script, 'hex') },
@@ -168,6 +170,7 @@ class TransferInteractiveNftCommand {
             console.log(`Detected UTXO (${utxo.txid}:${utxo.vout}) with value ${utxo.value} for funding the transfer operation...`);
             // Add the funding input
             psbt.addInput({
+                sequence: this.options.rbf ? command_helpers_1.RBF_INPUT_SEQUENCE : undefined,
                 hash: utxo.txid,
                 index: utxo.outputIndex,
                 witnessUtxo: { value: utxo.value, script: keypairFundingInfo.output },

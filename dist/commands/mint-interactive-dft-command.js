@@ -23,12 +23,12 @@ const tinysecp = require('tiny-secp256k1');
 (0, bitcoinjs_lib_1.initEccLib)(tinysecp);
 const ECPair = (0, ecpair_1.ECPairFactory)(tinysecp);
 class MintInteractiveDftCommand {
-    constructor(electrumApi, address, ticker, fundingWIF, options) {
+    constructor(electrumApi, options, address, ticker, fundingWIF) {
         this.electrumApi = electrumApi;
+        this.options = options;
         this.address = address;
         this.ticker = ticker;
         this.fundingWIF = fundingWIF;
-        this.options = options;
         this.options = (0, atomical_format_helpers_1.checkBaseRequestOptions)(this.options);
         this.ticker = this.ticker.startsWith('$') ? this.ticker.substring(1) : this.ticker;
     }
@@ -78,6 +78,7 @@ class MintInteractiveDftCommand {
             console.log('atomicalDecorated', atomicalResponse, atomicalDecorated);
             const atomicalBuilder = new atomical_operation_builder_1.AtomicalOperationBuilder({
                 electrumApi: this.electrumApi,
+                rbf: this.options.rbf,
                 satsbyte: this.options.satsbyte,
                 address: this.address,
                 disableMiningChalk: this.options.disableMiningChalk,

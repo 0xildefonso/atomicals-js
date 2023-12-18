@@ -23,7 +23,6 @@ class GetFtInfoCommand {
             const command = new resolve_command_1.ResolveCommand(this.electrumApi, this.atomicalAliasOrId, command_interface_1.AtomicalsGetFetchType.GET);
             const resolved = yield command.run();
             let response;
-            console.log('v', resolved);
             response = yield this.electrumApi.atomicalsGetFtInfo(resolved.data.result.atomical_id);
             const updatedRes = Object.assign({}, response, {
                 result: (0, atomical_format_helpers_1.decorateAtomical)(response.result)

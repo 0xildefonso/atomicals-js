@@ -15,6 +15,7 @@ const bitcoin = require('bitcoinjs-lib');
 bitcoin.initEccLib(ecc);
 const bitcoinjs_lib_1 = require("bitcoinjs-lib");
 const command_helpers_1 = require("./command-helpers");
+const atomical_format_helpers_1 = require("../utils/atomical-format-helpers");
 const atomical_operation_builder_1 = require("../utils/atomical-operation-builder");
 const tinysecp = require('tiny-secp256k1');
 (0, bitcoinjs_lib_1.initEccLib)(tinysecp);
@@ -22,11 +23,29 @@ function validateDmint(obj) {
     if (!obj) {
         return false;
     }
-    if (!obj.dmint) {
+    const dmint = obj.dmint;
+    if (!dmint) {
         return false;
     }
-    const mh = obj.dmint.mint_length;
-    if (mh) {
+    for (const { o, p, bitworkc, bitworkr } of dmint.rules) {
+        try {
+            new RegExp(p);
+        }
+        catch (e) {
+            throw `Invalid pattern: ${p}.\n${e}`;
+        }
+        if (bitworkc && !(0, atomical_format_helpers_1.isValidBitworkString)(bitworkc)) {
+            return false;
+        }
+        if (bitworkr && !(0, atomical_format_helpers_1.isValidBitworkString)(bitworkr)) {
+            return false;
+        }
+    }
+    const mh = dmint.mint_height;
+    if (mh === 0) {
+        return true;
+    }
+    if (mh != undefined) {
         if (isNaN(mh)) {
             return false;
         }
@@ -34,19 +53,17 @@ function validateDmint(obj) {
             return false;
         }
     }
-    else {
-        return mh !== 0;
-    }
+    return false;
 }
 exports.validateDmint = validateDmint;
 class SetContainerDmintInteractiveCommand {
-    constructor(electrumApi, containerName, filename, owner, funding, options) {
+    constructor(electrumApi, options, containerName, filename, owner, funding) {
         this.electrumApi = electrumApi;
+        this.options = options;
         this.containerName = containerName;
         this.filename = filename;
         this.owner = owner;
         this.funding = funding;
-        this.options = options;
     }
     run() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -59,6 +76,7 @@ class SetContainerDmintInteractiveCommand {
             const { atomicalInfo, locationInfo, inputUtxoPartial } = yield (0, command_helpers_1.getAndCheckAtomicalInfo)(this.electrumApi, this.containerName, this.owner.address, 'NFT', 'container');
             const atomicalBuilder = new atomical_operation_builder_1.AtomicalOperationBuilder({
                 electrumApi: this.electrumApi,
+                rbf: this.options.rbf,
                 satsbyte: this.options.satsbyte,
                 address: this.owner.address,
                 disableMiningChalk: this.options.disableMiningChalk,

@@ -262,10 +262,10 @@ class Atomicals {
             }
         });
     }
-    static walletInit(phrase, path) {
+    static walletInit(phrase, path, n) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const command = new wallet_init_command_1.WalletInitCommand(phrase, path);
+                const command = new wallet_init_command_1.WalletInitCommand(phrase, path, n);
                 return command.run();
             }
             catch (error) {
@@ -296,11 +296,11 @@ class Atomicals {
             }
         });
     }
-    mintDatInteractive(filepath, givenFileName, address, WIF, options) {
+    mintDatInteractive(options, filepath, givenFileName, address, WIF) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new mint_interactive_dat_command_1.MintInteractiveDatCommand(this.electrumApi, filepath, givenFileName, address, WIF, options);
+                const command = new mint_interactive_dat_command_1.MintInteractiveDatCommand(this.electrumApi, options, filepath, givenFileName, address, WIF);
                 return yield command.run();
             }
             catch (error) {
@@ -315,11 +315,11 @@ class Atomicals {
             }
         });
     }
-    mintNftInteractive(files, address, WIF, options) {
+    mintNftInteractive(options, files, address, WIF) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new mint_interactive_nft_command_1.MintInteractiveNftCommand(this.electrumApi, files, address, WIF, options);
+                const command = new mint_interactive_nft_command_1.MintInteractiveNftCommand(this.electrumApi, options, files, address, WIF);
                 return yield command.run();
             }
             catch (error) {
@@ -334,11 +334,11 @@ class Atomicals {
             }
         });
     }
-    mintRealmInteractive(requestRealm, address, WIF, options) {
+    mintRealmInteractive(options, requestRealm, address, WIF) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new mint_interactive_realm_command_1.MintInteractiveRealmCommand(this.electrumApi, requestRealm, address, WIF, options);
+                const command = new mint_interactive_realm_command_1.MintInteractiveRealmCommand(this.electrumApi, options, requestRealm, address, WIF);
                 return yield command.run();
             }
             catch (error) {
@@ -353,11 +353,11 @@ class Atomicals {
             }
         });
     }
-    mintSubrealmInteractive(requestSubRealm, address, WIF, owner, options) {
+    mintSubrealmInteractive(options, requestSubRealm, address, WIF, owner) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new mint_interactive_subrealm_command_1.MintInteractiveSubrealmCommand(this.electrumApi, requestSubRealm, address, WIF, owner, options);
+                const command = new mint_interactive_subrealm_command_1.MintInteractiveSubrealmCommand(this.electrumApi, options, requestSubRealm, address, WIF, owner);
                 return yield command.run();
             }
             catch (error) {
@@ -372,11 +372,11 @@ class Atomicals {
             }
         });
     }
-    mintContainerItemInteractive(container, itemId, manifestFile, address, WIF, owner, options) {
+    mintContainerItemInteractive(options, container, itemId, manifestFile, address, WIF, owner) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new mint_interactive_ditem_command_1.MintInteractiveDitemCommand(this.electrumApi, container, itemId, manifestFile, address, WIF, options);
+                const command = new mint_interactive_ditem_command_1.MintInteractiveDitemCommand(this.electrumApi, options, container, itemId, manifestFile, address, WIF);
                 return yield command.run();
             }
             catch (error) {
@@ -391,11 +391,11 @@ class Atomicals {
             }
         });
     }
-    mintContainerInteractive(requestContainer, address, WIF, options) {
+    mintContainerInteractive(options, requestContainer, address, WIF) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new mint_interactive_container_command_1.MintInteractiveContainerCommand(this.electrumApi, requestContainer, address, WIF, options);
+                const command = new mint_interactive_container_command_1.MintInteractiveContainerCommand(this.electrumApi, options, requestContainer, address, WIF);
                 return yield command.run();
             }
             catch (error) {
@@ -411,11 +411,11 @@ class Atomicals {
             }
         });
     }
-    mintFtInteractive(files, supply, address, requestTicker, WIF, options) {
+    mintFtInteractive(options, file, supply, address, requestTicker, WIF) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new mint_interactive_ft_command_1.MintInteractiveFtCommand(this.electrumApi, files, supply, address, requestTicker, WIF, options);
+                const command = new mint_interactive_ft_command_1.MintInteractiveFtCommand(this.electrumApi, options, file, supply, address, requestTicker, WIF);
                 return yield command.run();
             }
             catch (error) {
@@ -430,11 +430,11 @@ class Atomicals {
             }
         });
     }
-    mintDftInteractive(address, ticker, WIF, options) {
+    mintDftInteractive(options, address, ticker, WIF) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new mint_interactive_dft_command_1.MintInteractiveDftCommand(this.electrumApi, address, ticker, WIF, options);
+                const command = new mint_interactive_dft_command_1.MintInteractiveDftCommand(this.electrumApi, options, address, ticker, WIF);
                 return yield command.run();
             }
             catch (error) {
@@ -449,11 +449,11 @@ class Atomicals {
             }
         });
     }
-    initDftInteractive(files, address, requestTicker, mintAmount, maxMints, mintHeight, mintBitworkc, mintBitworkr, WIF, options) {
+    initDftInteractive(options, file, address, requestTicker, mintAmount, maxMints, mintHeight, mintBitworkc, mintBitworkr, WIF) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new init_interactive_dft_command_1.InitInteractiveDftCommand(this.electrumApi, files, address, requestTicker, mintAmount, maxMints, mintHeight, mintBitworkc, mintBitworkr, WIF, options);
+                const command = new init_interactive_dft_command_1.InitInteractiveDftCommand(this.electrumApi, options, file, address, requestTicker, mintAmount, maxMints, mintHeight, mintBitworkc, mintBitworkr, WIF);
                 return yield command.run();
             }
             catch (error) {
@@ -468,11 +468,11 @@ class Atomicals {
             }
         });
     }
-    disableSubrealmRules(realmOrSubrealm, funding, atomicalOwner, options) {
+    disableSubrealmRules(options, realmOrSubrealm, funding, atomicalOwner) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new disable_subrealm_rules_command_1.DisableSubrealmRulesInteractiveCommand(this.electrumApi, realmOrSubrealm, funding, atomicalOwner, options);
+                const command = new disable_subrealm_rules_command_1.DisableSubrealmRulesInteractiveCommand(this.electrumApi, options, realmOrSubrealm, funding, atomicalOwner);
                 return yield command.run();
             }
             catch (error) {
@@ -487,11 +487,11 @@ class Atomicals {
             }
         });
     }
-    enableSubrealmRules(realmOrSubrealm, file, funding, atomicalOwner, options) {
+    enableSubrealmRules(options, realmOrSubrealm, file, funding, atomicalOwner) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new enable_subrealm_rules_command_1.EnableSubrealmRulesCommand(this.electrumApi, realmOrSubrealm, file, funding, atomicalOwner, options);
+                const command = new enable_subrealm_rules_command_1.EnableSubrealmRulesCommand(this.electrumApi, options, realmOrSubrealm, file, funding, atomicalOwner);
                 return yield command.run();
             }
             catch (error) {
@@ -506,11 +506,11 @@ class Atomicals {
             }
         });
     }
-    setRelationInteractive(atomicalId, relationName, values, funding, atomicalOwner, options) {
+    setRelationInteractive(options, atomicalId, relationName, values, funding, atomicalOwner) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new set_relation_interactive_command_1.SetRelationInteractiveCommand(this.electrumApi, atomicalId, relationName, values, atomicalOwner, funding, options);
+                const command = new set_relation_interactive_command_1.SetRelationInteractiveCommand(this.electrumApi, options, atomicalId, relationName, values, atomicalOwner, funding);
                 return yield command.run();
             }
             catch (error) {
@@ -525,11 +525,11 @@ class Atomicals {
             }
         });
     }
-    splatInteractive(atomicalId, funding, atomicalOwner, options) {
+    splatInteractive(options, atomicalId, funding, atomicalOwner) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new splat_interactive_command_1.SplatInteractiveCommand(this.electrumApi, atomicalId, atomicalOwner, funding, options);
+                const command = new splat_interactive_command_1.SplatInteractiveCommand(this.electrumApi, options, atomicalId, atomicalOwner, funding);
                 return yield command.run();
             }
             catch (error) {
@@ -544,11 +544,11 @@ class Atomicals {
             }
         });
     }
-    splitItneractive(atomicalId, funding, atomicalOwner, options) {
+    splitItneractive(options, atomicalId, funding, atomicalOwner) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new split_interactive_command_1.SplitInteractiveCommand(this.electrumApi, atomicalId, atomicalOwner, funding, options);
+                const command = new split_interactive_command_1.SplitInteractiveCommand(this.electrumApi, options, atomicalId, atomicalOwner, funding);
                 return yield command.run();
             }
             catch (error) {
@@ -563,11 +563,11 @@ class Atomicals {
             }
         });
     }
-    emitInteractive(atomicalId, files, funding, atomicalOwner, options) {
+    emitInteractive(options, atomicalId, files, funding, atomicalOwner) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new emit_interactive_command_1.EmitInteractiveCommand(this.electrumApi, atomicalId, files, atomicalOwner, funding, options);
+                const command = new emit_interactive_command_1.EmitInteractiveCommand(this.electrumApi, options, atomicalId, files, atomicalOwner, funding);
                 return yield command.run();
             }
             catch (error) {
@@ -582,11 +582,11 @@ class Atomicals {
             }
         });
     }
-    setInteractive(atomicalId, filename, funding, atomicalOwner, options) {
+    setInteractive(options, atomicalId, filename, funding, atomicalOwner) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new set_interactive_command_1.SetInteractiveCommand(this.electrumApi, atomicalId, filename, atomicalOwner, funding, options);
+                const command = new set_interactive_command_1.SetInteractiveCommand(this.electrumApi, options, atomicalId, filename, atomicalOwner, funding);
                 return yield command.run();
             }
             catch (error) {
@@ -601,11 +601,11 @@ class Atomicals {
             }
         });
     }
-    setContainerDataInteractive(containerName, filename, funding, atomicalOwner, options) {
+    setContainerDataInteractive(options, containerName, filename, funding, atomicalOwner) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new set_container_data_interactive_command_1.SetContainerDataInteractiveCommand(this.electrumApi, containerName, filename, atomicalOwner, funding, options);
+                const command = new set_container_data_interactive_command_1.SetContainerDataInteractiveCommand(this.electrumApi, options, containerName, filename, atomicalOwner, funding);
                 return yield command.run();
             }
             catch (error) {
@@ -620,11 +620,11 @@ class Atomicals {
             }
         });
     }
-    setContainerDmintInteractive(containerName, filename, funding, atomicalOwner, options) {
+    setContainerDmintInteractive(options, containerName, filename, funding, atomicalOwner) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new set_container_dmint_interactive_command_1.SetContainerDmintInteractiveCommand(this.electrumApi, containerName, filename, atomicalOwner, funding, options);
+                const command = new set_container_dmint_interactive_command_1.SetContainerDmintInteractiveCommand(this.electrumApi, options, containerName, filename, atomicalOwner, funding);
                 return yield command.run();
             }
             catch (error) {
@@ -639,11 +639,11 @@ class Atomicals {
             }
         });
     }
-    deleteInteractive(atomicalId, filesToDelete, funding, atomicalOwner, options) {
+    deleteInteractive(options, atomicalId, filesToDelete, funding, atomicalOwner) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new delete_interactive_command_1.DeleteInteractiveCommand(this.electrumApi, atomicalId, filesToDelete, funding, atomicalOwner, options);
+                const command = new delete_interactive_command_1.DeleteInteractiveCommand(this.electrumApi, options, atomicalId, filesToDelete, funding, atomicalOwner);
                 return yield command.run();
             }
             catch (error) {
@@ -658,11 +658,11 @@ class Atomicals {
             }
         });
     }
-    sealInteractive(atomicalId, funding, atomicalOwner, options) {
+    sealInteractive(options, atomicalId, funding, atomicalOwner) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new seal_interactive_command_1.SealInteractiveCommand(this.electrumApi, atomicalId, atomicalOwner, funding, options);
+                const command = new seal_interactive_command_1.SealInteractiveCommand(this.electrumApi, options, atomicalId, atomicalOwner, funding);
                 return yield command.run();
             }
             catch (error) {
@@ -677,11 +677,11 @@ class Atomicals {
             }
         });
     }
-    transferInteractiveNft(atomicalId, owner, funding, receiveAddress, satsbyte, satsoutput) {
+    transferInteractiveNft(options, atomicalId, owner, funding, receiveAddress, satsbyte, satsoutput) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new transfer_interactive_nft_command_1.TransferInteractiveNftCommand(this.electrumApi, atomicalId, owner.WIF, receiveAddress, funding.WIF, satsbyte, satsoutput);
+                const command = new transfer_interactive_nft_command_1.TransferInteractiveNftCommand(this.electrumApi, options, atomicalId, owner.WIF, receiveAddress, funding.WIF, satsbyte, satsoutput);
                 return yield command.run();
             }
             catch (error) {
@@ -696,11 +696,11 @@ class Atomicals {
             }
         });
     }
-    transferInteractiveFt(atomicalId, owner, funding, validatedWalletInfo, satsbyte, nofunding, atomicalIdReceipt) {
+    transferInteractiveFt(options, atomicalId, owner, funding, validatedWalletInfo, satsbyte, nofunding, atomicalIdReceipt) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new transfer_interactive_ft_command_1.TransferInteractiveFtCommand(this.electrumApi, atomicalId, owner.WIF, funding.WIF, validatedWalletInfo, satsbyte, nofunding, atomicalIdReceipt);
+                const command = new transfer_interactive_ft_command_1.TransferInteractiveFtCommand(this.electrumApi, options, atomicalId, owner.WIF, funding.WIF, validatedWalletInfo, satsbyte, nofunding, atomicalIdReceipt);
                 return yield command.run();
             }
             catch (error) {
@@ -715,11 +715,11 @@ class Atomicals {
             }
         });
     }
-    transferInteractiveBuilder(owner, funding, validatedWalletInfo, satsbyte, nofunding, atomicalIdReceipt, skipValidation = false) {
+    transferInteractiveBuilder(options, owner, funding, validatedWalletInfo, satsbyte, nofunding, atomicalIdReceipt, atomicalIdReceiptType, forceSkipValidation = false) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new transfer_interactive_builder_command_1.TransferInteractiveBuilderCommand(this.electrumApi, owner.WIF, funding.WIF, validatedWalletInfo, satsbyte, nofunding, atomicalIdReceipt, skipValidation);
+                const command = new transfer_interactive_builder_command_1.TransferInteractiveBuilderCommand(this.electrumApi, options, owner.WIF, funding.WIF, validatedWalletInfo, satsbyte, nofunding, atomicalIdReceipt, atomicalIdReceiptType, forceSkipValidation);
                 return yield command.run();
             }
             catch (error) {
@@ -734,11 +734,11 @@ class Atomicals {
             }
         });
     }
-    transferInteractiveUtxos(owner, funding, validatedWalletInfo, satsbyte, nofunding, atomicalIdReceipt) {
+    transferInteractiveUtxos(options, owner, funding, validatedWalletInfo, satsbyte, nofunding, atomicalIdReceipt) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new transfer_interactive_utxos_command_1.TransferInteractiveUtxosCommand(this.electrumApi, owner.WIF, funding.WIF, validatedWalletInfo, satsbyte, nofunding, atomicalIdReceipt);
+                const command = new transfer_interactive_utxos_command_1.TransferInteractiveUtxosCommand(this.electrumApi, options, owner.WIF, funding.WIF, validatedWalletInfo, satsbyte, nofunding, atomicalIdReceipt);
                 return yield command.run();
             }
             catch (error) {
@@ -1190,11 +1190,11 @@ class Atomicals {
             }
         });
     }
-    pendingSubrealms(address, funding, satsbyte, display = false, keepElectrumAlive = false) {
+    pendingSubrealms(options, address, funding, satsbyte, display = false, keepElectrumAlive = false) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new pending_subrealms_command_1.PendingSubrealmsCommand(this.electrumApi, address, funding.WIF, satsbyte, display);
+                const command = new pending_subrealms_command_1.PendingSubrealmsCommand(this.electrumApi, options, address, funding.WIF, satsbyte, display);
                 return yield command.run();
             }
             catch (error) {
@@ -1470,11 +1470,11 @@ class Atomicals {
             }
         });
     }
-    mergeInteractiveUtxos(owner, funding, validatedWalletInfo, satsbyte) {
+    mergeInteractiveUtxos(options, owner, funding, validatedWalletInfo, satsbyte) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 yield this.electrumApi.open();
-                const command = new merge_interactive_utxos_1.MergeInteractiveUtxosCommand(this.electrumApi, owner.WIF, funding.WIF, validatedWalletInfo, satsbyte);
+                const command = new merge_interactive_utxos_1.MergeInteractiveUtxosCommand(this.electrumApi, options, owner.WIF, funding.WIF, validatedWalletInfo, satsbyte);
                 return yield command.run();
             }
             catch (error) {

@@ -47,14 +47,14 @@ const promptContinue = () => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 class MintInteractiveFtCommand {
-    constructor(electrumApi, files, supply, address, requestTicker, fundingWIF, options) {
+    constructor(electrumApi, options, file, supply, address, requestTicker, fundingWIF) {
         this.electrumApi = electrumApi;
-        this.files = files;
+        this.options = options;
+        this.file = file;
         this.supply = supply;
         this.address = address;
         this.requestTicker = requestTicker;
         this.fundingWIF = fundingWIF;
-        this.options = options;
         this.options = (0, atomical_format_helpers_1.checkBaseRequestOptions)(this.options);
         this.requestTicker = this.requestTicker.startsWith('$') ? this.requestTicker.substring(1) : this.requestTicker;
         (0, atomical_format_helpers_1.isValidTickerName)(requestTicker);
@@ -62,15 +62,15 @@ class MintInteractiveFtCommand {
     }
     run() {
         return __awaiter(this, void 0, void 0, function* () {
-            let filesData = yield (0, command_helpers_1.prepareFilesDataAsObject)(this.files);
+            let filesData = yield (0, command_helpers_1.readJsonFileAsCompleteDataObjectEncodeAtomicalIds)(this.file, true);
             console.log('Initializing Direct FT Token');
             console.log('-----------------------');
             console.log('Total Supply (Satoshis): ', this.supply);
             console.log('Total Supply (BTC): ', this.supply / 100000000);
             let supply = this.supply;
             let decimals = 0;
-            if (filesData['meta'] && filesData['meta']['decimals']) {
-                decimals = parseInt(filesData['meta']['decimals'], 10);
+            if (filesData['decimals']) {
+                decimals = parseInt(filesData['decimals'], 10);
             }
             console.log('Decimals: ', decimals);
             if (!decimals || decimals === 0) {
@@ -102,6 +102,7 @@ class MintInteractiveFtCommand {
             }
             const atomicalBuilder = new atomical_operation_builder_1.AtomicalOperationBuilder({
                 electrumApi: this.electrumApi,
+                rbf: this.options.rbf,
                 satsbyte: this.options.satsbyte,
                 address: this.address,
                 disableMiningChalk: this.options.disableMiningChalk,

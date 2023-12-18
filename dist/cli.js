@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
@@ -20,19 +22,50 @@ const address_helpers_1 = require("./utils/address-helpers");
 const command_interface_1 = require("./commands/command.interface");
 const file_utils_1 = require("./utils/file-utils");
 const atomical_format_helpers_1 = require("./utils/atomical-format-helpers");
+const quotes = require("success-motivational-quotes");
+const chalk = require("chalk");
 dotenv.config();
 /////////////////////////////////////////////////////////////////////////////////////////////
 // General Helper Functions
 /////////////////////////////////////////////////////////////////////////////////////////////
-function printOperationResult(data, error) {
+function printSuccess(data, showDonation) {
+    console.log(JSON.stringify(data, null, 2));
+    if (!showDonation) {
+        return;
+    }
+    if (process.env.DISABLE_DONATE_QUOTE && process.env.DISABLE_DONATE_QUOTE === 'true') {
+        return;
+    }
+    console.log(chalk.blue("\n\n------------------------------------------------------------------------------"));
+    let q = 'Recommend to your children virtue; that alone can make them happy, not gold.';
+    let by = 'Ludwig van Beethoven';
+    try {
+        const quoteObj = quotes.getTodaysQuote();
+        q = quoteObj.body;
+        by = quoteObj.by;
+    }
+    catch (ex) {
+        // Lib not installed
+    }
+    console.log(chalk.green(q));
+    console.log(chalk.green('- ' + by));
+    console.log(chalk.blue("------------------------------------------------------------------------------\n"));
+    const donate = 'bc1pl6k2z5ra403zfeyevzsu7llh0mdqqn4802p4uqfhz6l7qzddq2mqduqvc6';
+    console.log('Thank you for your support and contributions to Atomicals CLI development! ❤️');
+    console.log(`Donation address: ${donate}\n`);
+    console.log(`Even a little goes a long way!\n`);
+    console.log(`Scan QR Code to Donate:`);
+    qrcode.generate(donate, { small: true });
+}
+function printFailure(data) {
     console.log(JSON.stringify(data, null, 2));
 }
-function handleResultLogging(result) {
-    if (!result || !result.success) {
-        printOperationResult(result, true);
+function handleResultLogging(result, showDonation) {
+    if (!result || !result.success || !result.data) {
+        printFailure(result);
     }
     else {
-        printOperationResult(result.data);
+        printSuccess(result.data, showDonation);
     }
 }
 function getRandomBitwork4() {
@@ -171,7 +204,7 @@ const program = new commander_1.Command();
 program
     .name('Atomicals CLI Utility')
     .description('Command line utility for interacting with Atomicals')
-    .version('1.0.0');
+    .version(require('../package.json').version);
 program.command('server-version')
     .description('Get electrumx server version info')
     .action((options) => __awaiter(void 0, void 0, void 0, function* () {
@@ -192,15 +225,15 @@ program.command('wallet-create')
     .description('Creates and displays new 12-word secret mnemonic phrase along with the primary and funding addresses')
     .action((options) => __awaiter(void 0, void 0, void 0, function* () {
     const result = yield _1.Atomicals.walletCreate();
-    console.log('Generated mnemonic phrase:');
-    console.log(`phrase: ${result.data.phrase}`);
-    console.log(`Primary address (P2TR): ${result.data.primary.address}`);
-    console.log(`Primary address WIF: ${result.data.primary.WIF}`);
-    console.log(`Primary address path: ${result.data.primary.path}`);
-    console.log(`Funding address (P2TR): ${result.data.funding.address}`);
-    console.log(`Funding address WIF: ${result.data.funding.WIF}`);
-    console.log(`Funding address path: ${result.data.funding.path}`);
-    console.log(result);
+    console.log('Generated mnemonic phrase:', result);
+    console.log(`phrase: ${result.data.wallet.phrase}`);
+    console.log(`Primary address (P2TR): ${result.data.wallet.primary.address}`);
+    console.log(`Primary address WIF: ${result.data.wallet.primary.WIF}`);
+    console.log(`Primary address path: ${result.data.wallet.primary.path}`);
+    console.log(`Funding address (P2TR): ${result.data.wallet.funding.address}`);
+    console.log(`Funding address WIF: ${result.data.wallet.funding.WIF}`);
+    console.log(`Funding address path: ${result.data.wallet.funding.path}`);
+    console.log(JSON.stringify(result, null, 2));
     console.log(`------------------------------------------------------`);
 }));
 program.command('wallet-decode')
@@ -223,9 +256,10 @@ program.command('wallet-init')
     .description('Initializes a new wallet at wallet.json')
     .option('--phrase <string>', 'Provide a wallet phrase')
     .option('--path <string>', 'Provide a path base', `m/86'/0'/0'`)
+    .option('--n <number>', 'Provider number of alias')
     .action((options) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const result = yield _1.Atomicals.walletInit(options.phrase, options.path);
+        const result = yield _1.Atomicals.walletInit(options.phrase, options.path, options.n ? parseInt(options.n, 10) : undefined);
         console.log('Wallet created at wallet.json');
         console.log(`phrase: ${result.data.phrase}`);
         console.log(`Primary address (P2TR): ${result.data.primary.address}`);
@@ -234,6 +268,7 @@ program.command('wallet-init')
         console.log(`Funding address (P2TR): ${result.data.funding.address}`);
         console.log(`Funding address WIF: ${result.data.funding.WIF}`);
         console.log(`Funding address path: ${result.data.funding.path}`);
+        console.log(`Full Data: ${JSON.stringify(result.data, null, 2)}`);
         console.log(`------------------------------------------------------`);
     }
     catch (err) {
@@ -824,7 +859,7 @@ program.command('find-containers')
     .description('Search containers')
     .option('--q <string>', 'Search query')
     .option('--asc <string>', 'Sort by ascending', 'true')
-    .action((prefix, options) => __awaiter(void 0, void 0, void 0, function* () {
+    .action((options) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         yield (0, validate_wallet_storage_1.validateWalletStorage)();
         const config = (0, validate_cli_inputs_1.validateCliInputs)();
@@ -846,6 +881,7 @@ program.command('set')
     .description('Set (update) an existing Atomical with data.')
     .argument('<atomicalIdAlias>', 'string')
     .argument('<jsonFilename>', 'string')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--funding <string>', 'Use wallet alias WIF key to be used for funding')
     .option('--owner <string>', 'Use wallet alias WIF key to move the Atomical')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
@@ -859,12 +895,13 @@ program.command('set')
         const atomicals = new _1.Atomicals(electrum_api_1.ElectrumApi.createClient(process.env.ELECTRUMX_PROXY_BASE_URL || ''));
         let fundingWalletRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
         let ownerWalletRecord = resolveWalletAliasNew(walletInfo, options.owner, walletInfo.primary);
-        const result = yield atomicals.setInteractive(atomicalId, jsonFilename, fundingWalletRecord, ownerWalletRecord, {
+        const result = yield atomicals.setInteractive({
+            rbf: options.rbf,
             satsbyte: parseInt(options.satsbyte, 10),
             satsoutput: parseInt(options.satsoutput, 10),
             disableautoencode: !!options.disableautoencode,
             bitworkc: options.bitworkc ? options.bitworkc : '8',
-        });
+        }, atomicalId, jsonFilename, fundingWalletRecord, ownerWalletRecord);
         handleResultLogging(result);
     }
     catch (error) {
@@ -875,6 +912,7 @@ program.command('set-container-data')
     .description('Update container data with json file contents')
     .argument('<containerName>', 'string')
     .argument('<jsonFilename>', 'string')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--funding <string>', 'Use wallet alias WIF key to be used for funding')
     .option('--owner <string>', 'Use wallet alias WIF key to move the Atomical')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
@@ -889,12 +927,13 @@ program.command('set-container-data')
         let fundingWalletRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
         let ownerWalletRecord = resolveWalletAliasNew(walletInfo, options.owner, walletInfo.primary);
         containerName = containerName.startsWith('#') ? containerName : '#' + containerName;
-        const result = yield atomicals.setContainerDataInteractive(containerName, jsonFilename, fundingWalletRecord, ownerWalletRecord, {
+        const result = yield atomicals.setContainerDataInteractive({
+            rbf: options.rbf,
             satsbyte: parseInt(options.satsbyte, 10),
             satsoutput: parseInt(options.satsoutput, 10),
             disableautoencode: !!options.disableautoencode,
             bitworkc: options.bitworkc,
-        });
+        }, containerName, jsonFilename, fundingWalletRecord, ownerWalletRecord);
         handleResultLogging(result);
     }
     catch (error) {
@@ -932,11 +971,11 @@ program.command('enable-dmint')
     .description('Enable dmint for a container with the dmint config file produced from the prepare-dmint command')
     .argument('<container>', 'string')
     .argument('<jsonFilename>', 'string')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--funding <string>', 'Use wallet alias WIF key to be used for funding')
     .option('--owner <string>', 'Use wallet alias WIF key to move the Atomical')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
     .option('--satsoutput <number>', 'Satoshis to put into output', '1000')
-    .option('--disableautoencode', 'Disables auto encoding of $b variables')
     .option('--bitworkc <string>', 'Whether to add any bitwork proof of work to the commit tx')
     .action((containerName, jsonFilename, options) => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -945,12 +984,13 @@ program.command('enable-dmint')
         let fundingWalletRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
         let ownerWalletRecord = resolveWalletAliasNew(walletInfo, options.owner, walletInfo.primary);
         containerName = containerName.startsWith('#') ? containerName : '#' + containerName;
-        const result = yield atomicals.setContainerDmintInteractive(containerName, jsonFilename, fundingWalletRecord, ownerWalletRecord, {
+        const result = yield atomicals.setContainerDmintInteractive({
+            rbf: options.rbf,
             satsbyte: parseInt(options.satsbyte, 10),
             satsoutput: parseInt(options.satsoutput, 10),
             disableautoencode: !!options.disableautoencode,
             bitworkc: options.bitworkc || '7',
-        });
+        }, containerName, jsonFilename, fundingWalletRecord, ownerWalletRecord);
         handleResultLogging(result);
     }
     catch (error) {
@@ -962,6 +1002,7 @@ program.command('mint-item')
     .argument('<containerName>', 'string')
     .argument('<itemName>', 'string')
     .argument('<manifestFile>', 'string')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--owner <string>', 'Owner of the parent Atomical. Used for direct subrealm minting.')
     .option('--initialowner <string>', 'Initial owner wallet alias to mint the Atomical into')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
@@ -978,7 +1019,8 @@ program.command('mint-item')
         let initialOwnerAddress = resolveAddress(walletInfo, options.initialowner, walletInfo.primary);
         let ownerWalletRecord = resolveWalletAliasNew(walletInfo, options.owner, walletInfo.primary);
         let fundingRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
-        const result = yield atomicals.mintContainerItemInteractive(containerName, itemName, manifestFile, initialOwnerAddress.address, fundingRecord.WIF, ownerWalletRecord, {
+        const result = yield atomicals.mintContainerItemInteractive({
+            rbf: options.rbf,
             meta: options.meta,
             ctx: options.ctx,
             init: options.init,
@@ -987,9 +1029,9 @@ program.command('mint-item')
             container: options.container,
             bitworkc: options.bitworkc,
             bitworkr: options.bitworkr,
-            disableMiningChalk: options.disablechalk
-        });
-        handleResultLogging(result);
+            disableMiningChalk: options.disablechalk,
+        }, containerName, itemName, manifestFile, initialOwnerAddress.address, fundingRecord.WIF, ownerWalletRecord);
+        handleResultLogging(result, true);
     }
     catch (error) {
         console.log(error);
@@ -999,6 +1041,7 @@ program.command('emit')
     .description('Emit an event for an existing Atomical with data.')
     .argument('<atomicalIdAlias>', 'string')
     .argument('<data...>', 'string')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--funding <string>', 'Use wallet alias WIF key to be used for funding')
     .option('--owner <string>', 'Use wallet alias WIF key to move the Atomical')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
@@ -1010,10 +1053,11 @@ program.command('emit')
         const atomicals = new _1.Atomicals(electrum_api_1.ElectrumApi.createClient(process.env.ELECTRUMX_PROXY_BASE_URL || ''));
         let fundingWalletRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
         let ownerWalletRecord = resolveWalletAliasNew(walletInfo, options.owner, walletInfo.primary);
-        const result = yield atomicals.emitInteractive(atomicalId, data, fundingWalletRecord, ownerWalletRecord, {
+        const result = yield atomicals.emitInteractive({
+            rbf: options.rbf,
             satsbyte: parseInt(options.satsbyte, 10),
             satsoutput: parseInt(options.satsoutput, 10),
-        });
+        }, atomicalId, data, fundingWalletRecord, ownerWalletRecord);
         handleResultLogging(result);
     }
     catch (error) {
@@ -1025,6 +1069,7 @@ program.command('set-relation')
     .argument('<atomicalId>', 'string')
     .argument('<relationName>', 'string')
     .argument('<relationValues...>', 'string')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--funding <string>', 'Use wallet alias WIF key to be used for funding')
     .option('--owner <string>', 'Use wallet alias WIF key to move the Atomical')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
@@ -1036,10 +1081,11 @@ program.command('set-relation')
         const atomicals = new _1.Atomicals(electrum_api_1.ElectrumApi.createClient(process.env.ELECTRUMX_PROXY_BASE_URL || ''));
         let fundingWalletRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
         let ownerWalletRecord = resolveWalletAliasNew(walletInfo, options.owner, walletInfo.primary);
-        const result = yield atomicals.setRelationInteractive(atomicalId, relationName, values, fundingWalletRecord, ownerWalletRecord, {
+        const result = yield atomicals.setRelationInteractive({
+            rbf: options.rbf,
             satsbyte: parseInt(options.satsbyte, 10),
-            satsoutput: parseInt(options.satsoutput, 10)
-        });
+            satsoutput: parseInt(options.satsoutput, 10),
+        }, atomicalId, relationName, values, fundingWalletRecord, ownerWalletRecord);
         handleResultLogging(result);
     }
     catch (error) {
@@ -1050,6 +1096,7 @@ program.command('delete')
     .description('Delete keys for existing Atomical.')
     .argument('<atomicalIdAlias>', 'string')
     .argument('<filesToDelete...>', 'string')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--funding <string>', 'Use wallet alias WIF key to be used for funding')
     .option('--owner <string>', 'Use wallet alias WIF key to move the Atomical')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
@@ -1064,13 +1111,14 @@ program.command('delete')
         const atomicals = new _1.Atomicals(electrum_api_1.ElectrumApi.createClient(process.env.ELECTRUMX_PROXY_BASE_URL || ''));
         let fundingWalletRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
         let ownerWalletRecord = resolveWalletAliasNew(walletInfo, options.owner, walletInfo.primary);
-        const result = yield atomicals.deleteInteractive(atomicalId, filesToDelete, ownerWalletRecord, fundingWalletRecord, {
+        const result = yield atomicals.deleteInteractive({
+            rbf: options.rbf,
             satsbyte: parseInt(options.satsbyte, 10),
             satsoutput: parseInt(options.satsoutput, 10),
             bitworkc: options.bitworkc ? options.bitworkc : '8',
             bitworkr: options.bitworkr,
-            disableMiningChalk: options.disablechalk
-        });
+            disableMiningChalk: options.disablechalk,
+        }, atomicalId, filesToDelete, ownerWalletRecord, fundingWalletRecord);
         handleResultLogging(result);
     }
     catch (error) {
@@ -1080,6 +1128,7 @@ program.command('delete')
 program.command('seal')
     .description('Seal any NFT Atomical type permanently so that it can never be updated or transferred ever again.')
     .argument('<atomicalIdAlias>', 'string')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--funding <string>', 'Use wallet alias WIF key to be used for funding')
     .option('--owner <string>', 'Use wallet alias WIF key to move the Atomical')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
@@ -1091,10 +1140,11 @@ program.command('seal')
         const atomicals = new _1.Atomicals(electrum_api_1.ElectrumApi.createClient(process.env.ELECTRUMX_PROXY_BASE_URL || ''));
         let fundingWalletRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
         let ownerWalletRecord = resolveWalletAliasNew(walletInfo, options.owner, walletInfo.primary);
-        const result = yield atomicals.sealInteractive(atomicalId, fundingWalletRecord, ownerWalletRecord, {
+        const result = yield atomicals.sealInteractive({
+            rbf: options.rbf,
             satsbyte: parseInt(options.satsbyte),
-            bitworkc: options.bitworkc || '1'
-        });
+            bitworkc: options.bitworkc || '1',
+        }, atomicalId, fundingWalletRecord, ownerWalletRecord);
         handleResultLogging(result);
     }
     catch (error) {
@@ -1104,6 +1154,7 @@ program.command('seal')
 program.command('splat')
     .description('Extract an NFT Atomical from a UTXO which contains multiple Atomicals')
     .argument('<locationId>', 'string')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--funding <string>', 'Use wallet alias WIF key to be used for funding')
     .option('--owner <string>', 'Use wallet alias WIF key to move the Atomical')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
@@ -1116,39 +1167,43 @@ program.command('splat')
         const atomicals = new _1.Atomicals(electrum_api_1.ElectrumApi.createClient(process.env.ELECTRUMX_PROXY_BASE_URL || ''));
         let fundingWalletRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
         let ownerWalletRecord = resolveWalletAliasNew(walletInfo, options.owner, walletInfo.primary);
-        const result = yield atomicals.splatInteractive(locationId, fundingWalletRecord, ownerWalletRecord, {
+        const result = yield atomicals.splatInteractive({
+            rbf: options.rbf,
             satsbyte: parseInt(options.satsbyte),
             satsoutput: parseInt(options.satsoutput),
-            bitworkc: options.bitworkc || '1'
-        });
+            bitworkc: options.bitworkc || '1',
+        }, locationId, fundingWalletRecord, ownerWalletRecord);
         handleResultLogging(result);
     }
     catch (error) {
         console.log(error);
     }
 }));
+/*
 program.command('split')
-    .description('Split operation to separate the FT Atomicals at a single UTXOs.')
-    .argument('<locationId>', 'string')
-    .option('--funding <string>', 'Use wallet alias wif key to be used for funding')
-    .option('--owner <string>', 'Use wallet alias WIF key to move the Atomical')
-    .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
-    .action((locationId, options) => __awaiter(void 0, void 0, void 0, function* () {
+  .description('Split operation to separate the FT Atomicals at a single UTXOs.')
+  .argument('<locationId>', 'string')
+  .option('--rbf', 'Whether to enable RBF for transactions.')
+  .option('--funding <string>', 'Use wallet alias wif key to be used for funding')
+  .option('--owner <string>', 'Use wallet alias WIF key to move the Atomical')
+  .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
+  .action(async (locationId, options) => {
     try {
-        const walletInfo = yield (0, validate_wallet_storage_1.validateWalletStorage)();
-        const config = (0, validate_cli_inputs_1.validateCliInputs)();
-        const atomicals = new _1.Atomicals(electrum_api_1.ElectrumApi.createClient(process.env.ELECTRUMX_PROXY_BASE_URL || ''));
-        let fundingWalletRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
-        let ownerWalletRecord = resolveWalletAliasNew(walletInfo, options.owner, walletInfo.primary);
-        const result = yield atomicals.splitItneractive(locationId, fundingWalletRecord, ownerWalletRecord, {
-            satsbyte: parseInt(options.satsbyte)
-        });
-        handleResultLogging(result);
+      const walletInfo = await validateWalletStorage();
+      const config: ConfigurationInterface = validateCliInputs();
+      const atomicals = new Atomicals(ElectrumApi.createClient(process.env.ELECTRUMX_PROXY_BASE_URL || ''));
+      let fundingWalletRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
+      let ownerWalletRecord = resolveWalletAliasNew(walletInfo, options.owner, walletInfo.primary);
+      const result: any = await atomicals.splitItneractive({
+        rbf: options.rbf,
+        satsbyte: parseInt(options.satsbyte),
+      }, locationId, fundingWalletRecord, ownerWalletRecord);
+      handleResultLogging(result);
+    } catch (error) {
+      console.log(error);
     }
-    catch (error) {
-        console.log(error);
-    }
-}));
+  });
+*/
 program.command('get')
     .description('Get the status of an Atomical')
     .argument('<atomicalAliasOrId>', 'string')
@@ -1160,7 +1215,7 @@ program.command('get')
         const atomicals = new _1.Atomicals(electrum_api_1.ElectrumApi.createClient(process.env.ELECTRUMX_PROXY_BASE_URL || ''));
         const verbose = options.verbose ? true : false;
         const result = yield atomicals.resolveAtomical(atomicalAliasOrId, command_interface_1.AtomicalsGetFetchType.GET, undefined, verbose);
-        handleResultLogging(result);
+        handleResultLogging(result, true);
     }
     catch (error) {
         console.log(error);
@@ -1205,8 +1260,7 @@ program.command('location')
         yield (0, validate_wallet_storage_1.validateWalletStorage)();
         const config = (0, validate_cli_inputs_1.validateCliInputs)();
         const atomicals = new _1.Atomicals(electrum_api_1.ElectrumApi.createClient(process.env.ELECTRUMX_PROXY_BASE_URL || ''));
-        const verbose = options.verbose ? true : false;
-        const result = yield atomicals.resolveAtomical(atomicalAliasOrId, command_interface_1.AtomicalsGetFetchType.LOCATION, undefined, verbose);
+        const result = yield atomicals.resolveAtomical(atomicalAliasOrId, command_interface_1.AtomicalsGetFetchType.LOCATION, undefined, options.verbose);
         handleResultLogging(result);
     }
     catch (error) {
@@ -1286,6 +1340,7 @@ program.command('enable-subrealms')
     .description('Set and enable subrealm minting rules for a realm or subrealm')
     .argument('<realmOrSubRealm>', 'string')
     .argument('<file>')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--funding <string>', 'Use wallet alias WIF key to be used for funding')
     .option('--owner <string>', 'Use wallet alias WIF key to move the Atomical')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
@@ -1301,13 +1356,14 @@ program.command('enable-subrealms')
         let fundingWalletRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
         let ownerWalletRecord = resolveWalletAliasNew(walletInfo, options.owner, walletInfo.primary);
         const realmOrSubRealmAdded = realmOrSubRealm.indexOf('+') === 0 ? realmOrSubRealm : '+' + realmOrSubRealm;
-        const result = yield atomicals.enableSubrealmRules(realmOrSubRealmAdded, file, fundingWalletRecord, ownerWalletRecord, {
+        const result = yield atomicals.enableSubrealmRules({
+            rbf: options.rbf,
             satsbyte: parseInt(options.satsbyte),
             satsoutput: parseInt(options.satsoutput),
             bitworkc: options.bitworkc,
             bitworkr: options.bitworkr,
-            disableMiningChalk: options.disablechalk
-        });
+            disableMiningChalk: options.disablechalk,
+        }, realmOrSubRealmAdded, file, fundingWalletRecord, ownerWalletRecord);
         handleResultLogging(result);
     }
     catch (error) {
@@ -1317,6 +1373,7 @@ program.command('enable-subrealms')
 program.command('disable-subrealms')
     .description('Delete the subrealm minting rules for a realm or subrealm')
     .argument('<realmOrSubRealm>', 'string')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--funding <string>', 'Use wallet alias WIF key to be used for funding')
     .option('--owner <string>', 'Use wallet alias WIF key to move the Atomical')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
@@ -1332,13 +1389,14 @@ program.command('disable-subrealms')
         let fundingWalletRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
         let ownerWalletRecord = resolveWalletAliasNew(walletInfo, options.owner, walletInfo.primary);
         const realmOrSubRealmAdded = realmOrSubRealm.indexOf('+') === 0 ? realmOrSubRealm : '+' + realmOrSubRealm;
-        const result = yield atomicals.disableSubrealmRules(realmOrSubRealmAdded, fundingWalletRecord, ownerWalletRecord, {
+        const result = yield atomicals.disableSubrealmRules({
+            rbf: options.rbf,
             satsbyte: parseInt(options.satsbyte),
             satsoutput: parseInt(options.satsoutput),
             bitworkc: options.bitworkc,
             bitworkr: options.bitworkr,
-            disableMiningChalk: options.disablechalk
-        });
+            disableMiningChalk: options.disablechalk,
+        }, realmOrSubRealmAdded, fundingWalletRecord, ownerWalletRecord);
         handleResultLogging(result);
     }
     catch (error) {
@@ -1347,11 +1405,12 @@ program.command('disable-subrealms')
 }));
 program.command('pending-subrealms')
     .description('Display pending subrealm Atomical requests and make payments')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--owner <string>', 'Show pending subrealms for an address or wallet')
     .option('--display', 'Show pending subrealms for an address or wallet')
     .option('--verbose', 'Show verbose raw output')
     .option('--funding <string>', 'Use wallet alias WIF key to be used for funding and change')
-    .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
+    .option('--satsbyte <number>', 'Satoshis per byte in fees', '300')
     .action((options) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const walletInfo = yield (0, validate_wallet_storage_1.validateWalletStorage)();
@@ -1361,7 +1420,7 @@ program.command('pending-subrealms')
         const display = options.display ? true : false;
         const satsbyte = parseInt(options.satsbyte);
         let fundingWalletRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
-        const result = yield atomicals.pendingSubrealms(ownerWalletRecord.address, fundingWalletRecord, satsbyte, display);
+        const result = yield atomicals.pendingSubrealms(options, ownerWalletRecord.address, fundingWalletRecord, satsbyte, display);
         if (options.verbose) {
             handleResultLogging(result);
         }
@@ -1377,10 +1436,8 @@ program.command('mint-ft')
     .description('Mint fungible token (FT) Atomical in direct issuance mode')
     .argument('<ticker>', 'string')
     .argument('<supply>', 'number')
-    .argument('<files...>', 'string')
-    .option('--meta <string...>', 'Populate the \'meta\' field with key value pairs or file contents')
-    .option('--ctx <string...>', 'Populate the \'ctx\' field with key value pairs or file contents')
-    .option('--init <string...>', 'Populate the \'init\' field with key value pairs or file contents')
+    .argument('<file>', 'string')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--initialowner <string>', 'Initial owner wallet alias to mint the Atomical into')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
     .option('--funding <string>', 'Use wallet alias WIF key to be used for funding and change')
@@ -1389,7 +1446,7 @@ program.command('mint-ft')
     .option('--parent <string>', 'Whether to require a parent atomical to be spent along with the mint.')
     .option('--parentowner <string>', 'Wallet owner of the parent to spend along with the mint.')
     .option('--disablechalk', 'Whether to disable the real-time chalked logging of each hash for mining. Improvements mining performance to set this flag')
-    .action((ticker, supply, files, options) => __awaiter(void 0, void 0, void 0, function* () {
+    .action((ticker, supply, file, options) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const walletInfo = yield (0, validate_wallet_storage_1.validateWalletStorage)();
         const config = (0, validate_cli_inputs_1.validateCliInputs)();
@@ -1401,7 +1458,8 @@ program.command('mint-ft')
         if (isNaN(supply)) {
             throw 'supply must be an integer';
         }
-        const result = yield atomicals.mintFtInteractive(files, parseInt(supply), initialOwnerRecord.address, requestTicker, fundingRecord.WIF, {
+        const result = yield atomicals.mintFtInteractive({
+            rbf: options.rbf,
             meta: options.meta,
             ctx: options.ctx,
             init: options.init,
@@ -1411,8 +1469,8 @@ program.command('mint-ft')
             bitworkr: options.bitworkr,
             parent: options.parent,
             parentOwner: parentOwnerRecord,
-            disableMiningChalk: options.disablechalk
-        });
+            disableMiningChalk: options.disablechalk,
+        }, file, parseInt(supply), initialOwnerRecord.address, requestTicker, fundingRecord.WIF);
         handleResultLogging(result);
     }
     catch (error) {
@@ -1425,10 +1483,8 @@ program.command('init-dft')
     .argument('<mint_amount>', 'number')
     .argument('<max_mints>', 'number')
     .argument('<mint_height>', 'number')
-    .argument('<files...>', 'string')
-    .option('--meta <string...>', 'Populate the \'meta\' field with key value pairs or file contents')
-    .option('--ctx <string...>', 'Populate the \'ctx\' field with key value pairs or file contents')
-    .option('--init <string...>', 'Populate the \'init\' field with key value pairs or file contents')
+    .argument('<file>', 'string')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--funding <string>', 'Use wallet alias wif key to be used for funding and change')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
     .option('--mintbitworkc <string>', 'Whether to require any bitwork proof of work to mint. Applies to the commit transaction.')
@@ -1438,7 +1494,7 @@ program.command('init-dft')
     .option('--parent <string>', 'Whether to require a parent atomical to be spent along with the mint.')
     .option('--parentowner <string>', 'Wallet owner of the parent to spend along with the mint.')
     .option('--disablechalk', 'Whether to disable the real-time chalked logging of each hash for Bitwork mining. Improvements mining performance to set this flag')
-    .action((ticker, mintAmount, maxMints, mintHeight, files, options) => __awaiter(void 0, void 0, void 0, function* () {
+    .action((ticker, mintAmount, maxMints, mintHeight, file, options) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const walletInfo = yield (0, validate_wallet_storage_1.validateWalletStorage)();
         const config = (0, validate_cli_inputs_1.validateCliInputs)();
@@ -1448,7 +1504,8 @@ program.command('init-dft')
         let parentOwnerRecord = resolveWalletAliasNew(walletInfo, options.parentowner, walletInfo.primary);
         let fundingRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
         const mintBitworkc = options.mintbitworkc ? options.mintbitworkc : getRandomBitwork4();
-        const result = yield atomicals.initDftInteractive(files, walletRecord.address, requestTicker, mintAmount, maxMints, mintHeight, mintBitworkc, options.mintbitworkr, fundingRecord.WIF, {
+        const result = yield atomicals.initDftInteractive({
+            rbf: options.rbf,
             meta: options.meta,
             ctx: options.ctx,
             init: options.init,
@@ -1459,8 +1516,8 @@ program.command('init-dft')
             bitworkr: options.bitworkr,
             parent: options.parent,
             parentOwner: parentOwnerRecord,
-            disableMiningChalk: options.disablechalk
-        });
+            disableMiningChalk: options.disablechalk,
+        }, file, walletRecord.address, requestTicker, mintAmount, maxMints, mintHeight, mintBitworkc, options.mintbitworkr, fundingRecord.WIF);
         handleResultLogging(result);
     }
     catch (error) {
@@ -1470,7 +1527,8 @@ program.command('init-dft')
 program.command('mint-dft')
     .description('Mint coins for a decentralized fungible token (FT)')
     .argument('<ticker>', 'string')
-    .option('--initialowner <string>', 'Make change into this wallet')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
+    .option('--initialowner <string>', 'Assign claimed tokens into this address')
     .option('--funding <string>', 'Use wallet alias wif key to be used for funding and change')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
     .option('--disablechalk', 'Whether to disable the real-time chalked logging of each hash for Bitwork mining. Improvements mining performance to set this flag')
@@ -1482,11 +1540,12 @@ program.command('mint-dft')
         const atomicals = new _1.Atomicals(electrum_api_1.ElectrumApi.createClient(process.env.ELECTRUMX_PROXY_BASE_URL || ''));
         let walletRecord = resolveWalletAliasNew(walletInfo, options.initialowner, walletInfo.primary);
         let fundingRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
-        const result = yield atomicals.mintDftInteractive(walletRecord.address, ticker, fundingRecord.WIF, {
+        const result = yield atomicals.mintDftInteractive({
+            rbf: options.rbf,
             satsbyte: parseInt(options.satsbyte),
-            disableMiningChalk: options.disablechalk
-        });
-        handleResultLogging(result);
+            disableMiningChalk: options.disablechalk,
+        }, walletRecord.address, ticker, fundingRecord.WIF);
+        handleResultLogging(result, true);
     }
     catch (error) {
         console.log(error);
@@ -1495,6 +1554,7 @@ program.command('mint-dft')
 program.command('mint-nft')
     .description('Mint non-fungible token (NFT) Atomical')
     .argument('<files...>', 'string')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--initialowner <string>', 'Initial owner wallet alias to mint the Atomical into')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
     .option('--satsoutput <number>', 'Satoshis to put into the minted atomical', '1000')
@@ -1513,7 +1573,8 @@ program.command('mint-nft')
         let initialOwnerAddress = resolveAddress(walletInfo, options.initialowner, walletInfo.primary);
         let parentOwnerRecord = resolveWalletAliasNew(walletInfo, options.parentowner, walletInfo.primary);
         let fundingRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
-        const result = yield atomicals.mintNftInteractive(files, initialOwnerAddress.address, fundingRecord.WIF, {
+        const result = yield atomicals.mintNftInteractive({
+            rbf: options.rbf,
             meta: options.meta,
             ctx: options.ctx,
             init: options.init,
@@ -1524,8 +1585,8 @@ program.command('mint-nft')
             bitworkr: options.bitworkr,
             parent: options.parent,
             parentOwner: parentOwnerRecord,
-            disableMiningChalk: options.disablechalk
-        });
+            disableMiningChalk: options.disablechalk,
+        }, files, initialOwnerAddress.address, fundingRecord.WIF);
         handleResultLogging(result);
     }
     catch (error) {
@@ -1535,6 +1596,7 @@ program.command('mint-nft')
 program.command('mint-realm')
     .description('Mint top level Realm non-fungible token (NFT) Atomical')
     .argument('<realm>', 'string')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--initialowner <string>', 'Initial owner wallet alias to mint the Atomical into')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
     .option('--satsoutput <number>', 'Satoshis to put into the minted atomical', '1000')
@@ -1553,7 +1615,8 @@ program.command('mint-realm')
         let initialOwnerAddress = resolveAddress(walletInfo, options.initialowner, walletInfo.primary);
         let parentOwnerRecord = resolveWalletAliasNew(walletInfo, options.parentowner, walletInfo.primary);
         let fundingRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
-        const result = yield atomicals.mintRealmInteractive(realm, initialOwnerAddress.address, fundingRecord.WIF, {
+        const result = yield atomicals.mintRealmInteractive({
+            rbf: options.rbf,
             meta: options.meta,
             ctx: options.ctx,
             init: options.init,
@@ -1564,9 +1627,9 @@ program.command('mint-realm')
             bitworkr: options.bitworkr,
             parent: options.parent,
             parentOwner: parentOwnerRecord,
-            disableMiningChalk: options.disablechalk
-        });
-        handleResultLogging(result);
+            disableMiningChalk: options.disablechalk,
+        }, realm, initialOwnerAddress.address, fundingRecord.WIF);
+        handleResultLogging(result, true);
     }
     catch (error) {
         console.log(error);
@@ -1575,6 +1638,7 @@ program.command('mint-realm')
 program.command('mint-subrealm')
     .description('Mint subrealm non-fungible token (NFT) Atomical')
     .argument('<realm>', 'string')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--owner <string>', 'Owner of the parent Atomical. Used for direct subrealm minting.')
     .option('--initialowner <string>', 'Initial owner wallet alias to mint the Atomical into')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
@@ -1592,7 +1656,8 @@ program.command('mint-subrealm')
         let initialOwnerAddress = resolveAddress(walletInfo, options.initialowner, walletInfo.primary);
         let ownerWalletRecord = resolveWalletAliasNew(walletInfo, options.owner, walletInfo.primary);
         let fundingRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
-        const result = yield atomicals.mintSubrealmInteractive(subrealm, initialOwnerAddress.address, fundingRecord.WIF, ownerWalletRecord, {
+        const result = yield atomicals.mintSubrealmInteractive({
+            rbf: options.rbf,
             meta: options.meta,
             ctx: options.ctx,
             init: options.init,
@@ -1601,8 +1666,8 @@ program.command('mint-subrealm')
             container: options.container,
             bitworkc: options.bitworkc,
             bitworkr: options.bitworkr,
-            disableMiningChalk: options.disablechalk
-        });
+            disableMiningChalk: options.disablechalk,
+        }, subrealm, initialOwnerAddress.address, fundingRecord.WIF, ownerWalletRecord);
         handleResultLogging(result);
     }
     catch (error) {
@@ -1612,6 +1677,7 @@ program.command('mint-subrealm')
 program.command('mint-container')
     .description('Mint container non-fungible token (NFT) Atomical')
     .argument('<container>', 'string')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--initialowner <string>', 'Initial owner wallet alias to mint the Atomical into')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
     .option('--satsoutput <number>', 'Satoshis to put into the minted atomical', '1000')
@@ -1630,7 +1696,8 @@ program.command('mint-container')
         let initialOwnerAddress = resolveAddress(walletInfo, options.initialowner, walletInfo.primary);
         let parentOwnerRecord = resolveWalletAliasNew(walletInfo, options.parentowner, walletInfo.primary);
         let fundingRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
-        const result = yield atomicals.mintContainerInteractive(container, initialOwnerAddress.address, fundingRecord.WIF, {
+        const result = yield atomicals.mintContainerInteractive({
+            rbf: options.rbf,
             meta: options.meta,
             ctx: options.ctx,
             init: options.init,
@@ -1642,7 +1709,7 @@ program.command('mint-container')
             parent: options.parent,
             parentOwner: parentOwnerRecord,
             disableMiningChalk: options.disablechalk
-        });
+        }, container, initialOwnerAddress.address, fundingRecord.WIF);
         handleResultLogging(result);
     }
     catch (error) {
@@ -1656,6 +1723,7 @@ program.command('transfer-nft')
     .description('Transfer Atomical NFT to new address')
     .argument('<atomicalId>', 'string')
     .argument('<address>', 'string')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--owner <string>', 'Use wallet alias WIF key to move the Atomical')
     .option('--funding <string>', 'Use wallet alias WIF key to be used for funding and change')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
@@ -1670,7 +1738,7 @@ program.command('transfer-nft')
         let ownerWalletRecord = resolveWalletAliasNew(walletInfo, options.owner, walletInfo.primary);
         let fundingWalletRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
         const receive = (0, address_helpers_1.performAddressAliasReplacement)(walletInfo, address);
-        const result = yield atomicals.transferInteractiveNft(atomicalId, ownerWalletRecord, fundingWalletRecord, receive.address, satsbyte, satsoutput);
+        const result = yield atomicals.transferInteractiveNft(options, atomicalId, ownerWalletRecord, fundingWalletRecord, receive.address, satsbyte, satsoutput);
         handleResultLogging(result);
     }
     catch (error) {
@@ -1680,6 +1748,7 @@ program.command('transfer-nft')
 program.command('transfer-ft')
     .description('Transfer Atomical FT to other addresses')
     .argument('<atomicalId>', 'string')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--owner <string>', 'Use wallet alias WIF key to move the Atomical')
     .option('--funding <string>', 'Use wallet alias WIF key to be used for funding and change')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
@@ -1694,7 +1763,7 @@ program.command('transfer-ft')
         let ownerWalletRecord = resolveWalletAliasNew(walletInfo, options.owner, walletInfo.primary);
         let fundingWalletRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
         const atomicalIdReceipt = options.atomicalreceipt;
-        const result = yield atomicals.transferInteractiveFt(atomicalId, ownerWalletRecord, fundingWalletRecord, walletInfo, satsbyte, options.nofunding, atomicalIdReceipt);
+        const result = yield atomicals.transferInteractiveFt(options, atomicalId, ownerWalletRecord, fundingWalletRecord, walletInfo, satsbyte, options.nofunding, atomicalIdReceipt);
         handleResultLogging(result);
     }
     catch (error) {
@@ -1703,12 +1772,14 @@ program.command('transfer-ft')
 }));
 program.command('transfer-builder')
     .description('Transfer plain regular UTXOs to another addresses')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--owner <string>', 'Use wallet alias WIF key to move the Atomical')
     .option('--funding <string>', 'Use wallet alias WIF key to be used for funding and change')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
     .option('--nofunding', 'Do not ask for seperate funding, use existing utxo')
     .option('--skipvalidation', 'Do not do FT transfer validation on broadcast (danger)')
     .option('--atomicalreceipt <string>', 'Attach an atomical id to a pay receipt')
+    .option('--atomicalreceipttype <string>', 'Attach receipt type p or d')
     .action((options) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const walletInfo = yield (0, validate_wallet_storage_1.validateWalletStorage)();
@@ -1718,7 +1789,8 @@ program.command('transfer-builder')
         let ownerWalletRecord = resolveWalletAliasNew(walletInfo, options.owner, walletInfo.primary);
         let fundingWalletRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
         const atomicalIdReceipt = options.atomicalreceipt;
-        const result = yield atomicals.transferInteractiveBuilder(ownerWalletRecord, fundingWalletRecord, walletInfo, satsbyte, options.nofunding, atomicalIdReceipt, options.skipvalidation);
+        const atomicalIdReceiptType = options.atomicalreceipttype || 'p';
+        const result = yield atomicals.transferInteractiveBuilder(options, ownerWalletRecord, fundingWalletRecord, walletInfo, satsbyte, options.nofunding, atomicalIdReceipt, atomicalIdReceiptType, options.skipvalidation);
         handleResultLogging(result);
     }
     catch (error) {
@@ -1727,6 +1799,7 @@ program.command('transfer-builder')
 }));
 program.command('transfer-utxos')
     .description('Transfer plain regular UTXOs to another addresses')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--owner <string>', 'Use wallet alias WIF key to move the Atomical')
     .option('--funding <string>', 'Use wallet alias WIF key to be used for funding and change')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
@@ -1741,7 +1814,7 @@ program.command('transfer-utxos')
         let ownerWalletRecord = resolveWalletAliasNew(walletInfo, options.owner, walletInfo.primary);
         let fundingWalletRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
         const atomicalIdReceipt = options.atomicalreceipt;
-        const result = yield atomicals.transferInteractiveUtxos(ownerWalletRecord, fundingWalletRecord, walletInfo, satsbyte, options.nofunding, atomicalIdReceipt);
+        const result = yield atomicals.transferInteractiveUtxos(options, ownerWalletRecord, fundingWalletRecord, walletInfo, satsbyte, options.nofunding, atomicalIdReceipt);
         handleResultLogging(result);
     }
     catch (error) {
@@ -1750,6 +1823,7 @@ program.command('transfer-utxos')
 }));
 program.command('merge-atomicals')
     .description('Merge Atomicals UTXOs together for test purposes')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--owner <string>', 'Use wallet alias WIF key to move the Atomicals')
     .option('--funding <string>', 'Use wallet alias WIF key to be used for funding and change')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
@@ -1761,7 +1835,7 @@ program.command('merge-atomicals')
         const atomicals = new _1.Atomicals(electrum_api_1.ElectrumApi.createClient(process.env.ELECTRUMX_PROXY_BASE_URL || ''));
         let ownerWalletRecord = resolveWalletAliasNew(walletInfo, options.owner, walletInfo.primary);
         let fundingWalletRecord = resolveWalletAliasNew(walletInfo, options.funding, walletInfo.funding);
-        const result = yield atomicals.mergeInteractiveUtxos(ownerWalletRecord, fundingWalletRecord, walletInfo, satsbyte);
+        const result = yield atomicals.mergeInteractiveUtxos(options, ownerWalletRecord, fundingWalletRecord, walletInfo, satsbyte);
         handleResultLogging(result);
     }
     catch (error) {
@@ -1844,6 +1918,7 @@ program.command('store-file')
     .description('Store general immutable data transaction that is not an NFT or FT')
     .argument('<filepath>', 'string')
     .argument('<givenFileName>', 'string')
+    .option('--rbf', 'Whether to enable RBF for transactions.')
     .option('--initialowner <string>', 'Initial owner wallet alias to mint the Atomical into')
     .option('--satsbyte <number>', 'Satoshis per byte in fees', '15')
     .option('--satsoutput <number>', 'Satoshis to put into output', '1000')
@@ -1859,7 +1934,7 @@ program.command('store-file')
         const atomicals = new _1.Atomicals(electrum_api_1.ElectrumApi.createClient(process.env.ELECTRUMX_PROXY_BASE_URL || ''));
         let walletRecord = resolveWalletAliasNew(walletInfo, options.initialowner, walletInfo.primary);
         let parentOwnerRecord = resolveWalletAliasNew(walletInfo, options.parentowner, walletInfo.primary);
-        const result = yield atomicals.mintDatInteractive(filepath, givenFileName, walletRecord.address, walletRecord.WIF, {
+        const result = yield atomicals.mintDatInteractive({
             meta: options.meta,
             ctx: options.ctx,
             init: options.init,
@@ -1869,8 +1944,9 @@ program.command('store-file')
             bitworkr: options.bitworkr,
             parent: options.parent,
             parentOwner: parentOwnerRecord,
-            disableMiningChalk: options.disablechalk
-        });
+            disableMiningChalk: options.disablechalk,
+            rbf: options.rbf,
+        }, filepath, givenFileName, walletRecord.address, walletRecord.WIF);
         handleResultLogging(result);
     }
     catch (error) {

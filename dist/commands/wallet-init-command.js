@@ -13,19 +13,25 @@ exports.WalletInitCommand = void 0;
 const create_key_pair_1 = require("../utils/create-key-pair");
 const file_utils_1 = require("../utils/file-utils");
 const wallet_path_resolver_1 = require("../utils/wallet-path-resolver");
+const fs = require("fs");
 const walletPath = (0, wallet_path_resolver_1.walletPathResolver)();
 class WalletInitCommand {
-    constructor(phrase, path) {
+    constructor(phrase, path, n) {
         this.phrase = phrase;
         this.path = path;
+        this.n = n;
     }
     run() {
         return __awaiter(this, void 0, void 0, function* () {
             if (yield this.walletExists()) {
                 throw "wallet.json exists, please remove it first to initialize another wallet. You may also use 'wallet-create' command to generate a new wallet.";
             }
-            const wallet = yield (0, create_key_pair_1.createPrimaryAndFundingKeyPairs)(this.phrase, this.path);
-            yield (0, file_utils_1.jsonFileWriter)(walletPath, {
+            const { wallet, imported } = yield (0, create_key_pair_1.createPrimaryAndFundingImportedKeyPairs)(this.phrase, this.path, this.n);
+            const walletDir = `wallets/`;
+            if (!fs.existsSync(walletDir)) {
+                fs.mkdirSync(walletDir);
+            }
+            const created = {
                 phrase: wallet.phrase,
                 primary: {
                     address: wallet.primary.address,
@@ -36,11 +42,13 @@ class WalletInitCommand {
                     address: wallet.funding.address,
                     path: wallet.funding.path,
                     WIF: wallet.funding.WIF
-                }
-            });
+                },
+                imported
+            };
+            yield (0, file_utils_1.jsonFileWriter)(walletPath, created);
             return {
                 success: true,
-                data: wallet
+                data: created
             };
         });
     }

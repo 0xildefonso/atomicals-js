@@ -34,7 +34,8 @@ class CreateDmintItemManifestsCommand {
             const filemap = {};
             const leafItems = [];
             for (const file of files) {
-                if (file === '.' || file === '..') {
+                if (file.startsWith('.')) {
+                    console.log(`Skipping ${file}...`);
                     continue;
                 }
                 const basePath = (0, path_1.basename)(file);

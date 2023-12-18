@@ -2,6 +2,7 @@ import { ElectrumApiInterface } from "../api/electrum-api.interface";
 import { CommandInterface } from "./command.interface";
 import { KeyPairInfo } from "../utils/address-keypair-path";
 import { IValidatedWalletInfo } from "../utils/validate-wallet-storage";
+import { BaseRequestOptions } from "../interfaces/api.interface";
 export interface IUtxoBalanceSummary {
     utxos: any[];
 }
@@ -32,14 +33,16 @@ export interface TransferConfigInterface {
 }
 export declare class TransferInteractiveBuilderCommand implements CommandInterface {
     private electrumApi;
+    private options;
     private currentOwnerAtomicalWIF;
     private fundingWIF;
     private validatedWalletInfo;
     private satsbyte;
     private nofunding;
     private atomicalIdReceipt?;
+    private atomicalIdReceiptType?;
     private forceSkipValidation?;
-    constructor(electrumApi: ElectrumApiInterface, currentOwnerAtomicalWIF: string, fundingWIF: string, validatedWalletInfo: IValidatedWalletInfo, satsbyte: number, nofunding: boolean, atomicalIdReceipt?: string | undefined, forceSkipValidation?: boolean | undefined);
+    constructor(electrumApi: ElectrumApiInterface, options: BaseRequestOptions, currentOwnerAtomicalWIF: string, fundingWIF: string, validatedWalletInfo: IValidatedWalletInfo, satsbyte: number, nofunding: boolean, atomicalIdReceipt?: string | undefined, atomicalIdReceiptType?: string | undefined, forceSkipValidation?: boolean | undefined);
     run(): Promise<any>;
     promptTransferOptions(address: any): Promise<TransferConfigInterface>;
     promptIfDetectedSomeAtomicalsAtSameUtxos(selectedUtxos: ISelectedUtxo[]): Promise<void>;

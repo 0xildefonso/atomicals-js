@@ -22,12 +22,12 @@ const atomical_format_helpers_1 = require("../utils/atomical-format-helpers");
 const tinysecp = require('tiny-secp256k1');
 (0, bitcoinjs_lib_1.initEccLib)(tinysecp);
 class SplatInteractiveCommand {
-    constructor(electrumApi, locationId, owner, funding, options) {
+    constructor(electrumApi, options, locationId, owner, funding) {
         this.electrumApi = electrumApi;
+        this.options = options;
         this.locationId = locationId;
         this.owner = owner;
         this.funding = funding;
-        this.options = options;
     }
     run() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -51,6 +51,7 @@ class SplatInteractiveCommand {
             const inputUtxoPartial = (0, address_helpers_1.GetUtxoPartialFromLocation)(this.owner.address, response.data.location_info);
             const atomicalBuilder = new atomical_operation_builder_1.AtomicalOperationBuilder({
                 electrumApi: this.electrumApi,
+                rbf: this.options.rbf,
                 satsbyte: this.options.satsbyte,
                 address: this.owner.address,
                 disableMiningChalk: this.options.disableMiningChalk,

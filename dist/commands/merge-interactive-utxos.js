@@ -26,8 +26,9 @@ const tinysecp = require('tiny-secp256k1');
 (0, bitcoinjs_lib_1.initEccLib)(tinysecp);
 const ECPair = (0, ecpair_1.ECPairFactory)(tinysecp);
 class MergeInteractiveUtxosCommand {
-    constructor(electrumApi, currentOwnerAtomicalWIF, fundingWIF, validatedWalletInfo, satsbyte) {
+    constructor(electrumApi, options, currentOwnerAtomicalWIF, fundingWIF, validatedWalletInfo, satsbyte) {
         this.electrumApi = electrumApi;
+        this.options = options;
         this.currentOwnerAtomicalWIF = currentOwnerAtomicalWIF;
         this.fundingWIF = fundingWIF;
         this.validatedWalletInfo = validatedWalletInfo;
@@ -290,6 +291,7 @@ class MergeInteractiveUtxosCommand {
                 // Add the atomical input, the value from the input counts towards the total satoshi amount required
                 const { output } = (0, address_helpers_1.detectAddressTypeToScripthash)(keyPairAtomical.address);
                 psbt.addInput({
+                    sequence: this.options.rbf ? command_helpers_1.RBF_INPUT_SEQUENCE : undefined,
                     hash: utxo.txid,
                     index: utxo.index,
                     witnessUtxo: { value: utxo.value, script: Buffer.from(output, 'hex') },
@@ -325,6 +327,7 @@ class MergeInteractiveUtxosCommand {
             console.log(`Detected UTXO (${utxo.txid}:${utxo.vout}) with value ${utxo.value} for funding the transfer operation...`);
             // Add the funding input
             psbt.addInput({
+                sequence: this.options.rbf ? command_helpers_1.RBF_INPUT_SEQUENCE : undefined,
                 hash: utxo.txid,
                 index: utxo.outputIndex,
                 witnessUtxo: { value: utxo.value, script: keyPairFunding.output },

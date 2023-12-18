@@ -1,0 +1,1 @@
+{"version":3,"file":"server-version-command.js","sourceRoot":"","sources":["../../lib/commands/server-version-command.ts"],"names":[],"mappings":";;;;;;;;;;;;AAEA,MAAa,oBAAoB;IAC/B,YAAoB,WAAiC;QAAjC,gBAAW,GAAX,WAAW,CAAsB;IAAG,CAAC;IACnD,GAAG;;YACP,MAAM,MAAM,GAAG,MAAM,IAAI,CAAC,WAAW,CAAC,aAAa,EAAE,CAAC;YACtD,OAAO,MAAM,CAAC;QAChB,CAAC;KAAA;CACF;AAND,oDAMC"}
